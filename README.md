@@ -6,24 +6,6 @@
 
 ```
     /**
-     * ip
-     */
-    private String host = "127.0.0.1";
-
-    /**
-     * 端口号
-     */
-    private int port = 5672;
-    /**
-     * 账号
-     */
-    private String username = "guest";
-    /**
-     * 密码
-     */
-    private String password = "guest";
-
-    /**
      * 允许空闲的最大通道数
      */
     private int channelCacheSize = 25;
@@ -69,6 +51,16 @@
      */
     private boolean listenerEnable = false;
 
+```
+
+**rabbitmq**的配置复用spring的配置
+
+```
+spring:
+  rabbitmq:
+    host: 114.215.122.xxx
+    username: xxxxx
+    password: xxxxx
 ```
 
 如果需要开启消费者的服务的话，设置**listener-enable**参数为**true**，默认为**false**，以yml举例如下：

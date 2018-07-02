@@ -1,9 +1,12 @@
 package top.arkstack.shine.mq;
 
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 /**
  * @author 7le
@@ -11,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @EnableConfigurationProperties
+@Import(RabbitAutoConfiguration.class)
 public class MqAutoConfiguration {
 
     @Bean
@@ -21,7 +25,7 @@ public class MqAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public RabbitmqFactory rabbitmqFactory(RabbitmqProperties mqProperties) {
-        return RabbitmqFactory.getInstance(mqProperties);
+    public RabbitmqFactory rabbitmqFactory(RabbitmqProperties mqProperties, CachingConnectionFactory factory) {
+        return RabbitmqFactory.getInstance(mqProperties, factory);
     }
 }

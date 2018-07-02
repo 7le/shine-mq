@@ -32,7 +32,7 @@ public class RabbitmqFactory implements Factory {
 
     private RabbitmqProperties config;
 
-    private CachingConnectionFactory rabbitConnectionFactory;
+    private static CachingConnectionFactory rabbitConnectionFactory;
 
     private RabbitAdmin rabbitAdmin;
 
@@ -61,7 +61,6 @@ public class RabbitmqFactory implements Factory {
     private RabbitmqFactory(RabbitmqProperties config) {
         Objects.requireNonNull(config, "The RabbitmqProperties is empty.");
         this.config = config;
-        initConnectionFactory();
         rabbitAdmin = new RabbitAdmin(rabbitConnectionFactory);
         rabbitTemplate = new RabbitTemplate(rabbitConnectionFactory);
         rabbitTemplate.setMessageConverter(serializerMessageConverter);
@@ -84,31 +83,12 @@ public class RabbitmqFactory implements Factory {
         isStarted.set(true);
     }
 
-    public synchronized static RabbitmqFactory getInstance(RabbitmqProperties config) {
+    public synchronized static RabbitmqFactory getInstance(RabbitmqProperties config, CachingConnectionFactory factory) {
+        rabbitConnectionFactory = factory;
         if (rabbitmqFactory == null) {
             rabbitmqFactory = new RabbitmqFactory(config);
         }
         return rabbitmqFactory;
-    }
-
-    /**
-     * 初始化rabbitmq连接
-     */
-    private void initConnectionFactory() {
-        rabbitConnectionFactory = new CachingConnectionFactory();
-        if (config.getHost().contains(",")) {
-            rabbitConnectionFactory.setAddresses(config.getHost());
-        } else {
-            rabbitConnectionFactory.setHost(config.getHost());
-            rabbitConnectionFactory.setPort(config.getPort());
-        }
-        rabbitConnectionFactory.setChannelCacheSize(config.getChannelCacheSize());
-
-        rabbitConnectionFactory.setUsername(config.getUsername());
-        rabbitConnectionFactory.setPassword(config.getPassword());
-        if (!StringUtils.isEmpty(config.getVirtualHost())) {
-            rabbitConnectionFactory.setVirtualHost(config.getVirtualHost());
-        }
     }
 
     /**

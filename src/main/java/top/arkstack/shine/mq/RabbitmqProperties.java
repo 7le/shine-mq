@@ -14,24 +14,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class RabbitmqProperties {
 
     /**
-     * ip
-     */
-    private String host = "127.0.0.1";
-
-    /**
-     * 端口号
-     */
-    private int port = 5672;
-    /**
-     * 账号
-     */
-    private String username = "guest";
-    /**
-     * 密码
-     */
-    private String password = "guest";
-
-    /**
      * 允许空闲的最大通道数
      */
     private int channelCacheSize = 25;
