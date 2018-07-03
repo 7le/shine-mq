@@ -22,11 +22,6 @@
     private int prefetchSize = 1;
 
     /**
-     * 虚拟主机
-     */
-    private String virtualHost;
-
-    /**
      * 消费者数量 缺省为CPU核数*2
      */
     private int processSize = Runtime.getRuntime().availableProcessors() << 1;
