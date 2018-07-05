@@ -75,7 +75,7 @@ public class RabbitmqFactory implements Factory {
         Set<String> mapping = msgAdapterHandler.getAllBinding();
         for (String relation : mapping) {
             String[] relaArr = relation.split("_");
-            declareBinding(relaArr[1], relaArr[0], relaArr[2]);
+            declareBinding(relaArr[0], relaArr[1], relaArr[2]);
         }
         if (config.isListenerEnable()) {
             initMsgListenerAdapter();
@@ -117,13 +117,14 @@ public class RabbitmqFactory implements Factory {
     public Factory add(String queueName, String exchangeName, String routingKey, Processor processor, MessageConverter messageConverter) {
         msgAdapterHandler.add(queueName, exchangeName, routingKey, processor, messageConverter);
         if (isStarted.get() && config.isListenerEnable()) {
-            initMsgListenerAdapter();
+            declareBinding(queueName, exchangeName, routingKey);
+            listenerContainer.setQueues(queues.values().toArray(new Queue[queues.size()]));
         }
         return this;
     }
 
-    private synchronized void declareBinding(String exchangeName, String queueName, String routingKey) {
-        String bindRelation = exchangeName + "_" + queueName + "_" + routingKey;
+    private synchronized void declareBinding(String queueName, String exchangeName, String routingKey) {
+        String bindRelation = queueName + "_" + exchangeName + "_" + routingKey;
         if (bind.contains(bindRelation)) {
             return;
         }
