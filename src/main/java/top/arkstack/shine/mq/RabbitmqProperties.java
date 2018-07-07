@@ -30,6 +30,15 @@ public class RabbitmqProperties {
     private int prefetchSize = 1;
 
     /**
+     * {@link org.springframework.amqp.core.AcknowledgeMode}
+     *
+     * 0 AUTO
+     * 1 MANUAL
+     * 2 NONE
+     */
+    private int acknowledgeMode = 1;
+
+    /**
      * 消费者数量 缺省为CPU核数*2
      */
     private int processSize = Runtime.getRuntime().availableProcessors() << 1;
@@ -52,5 +61,5 @@ public class RabbitmqProperties {
     /**
      * 是否初始化消息监听者， 若服务只是Producer则关闭
      */
-    private boolean listenerEnable = false;
+    private boolean listenerEnable = true;
 }

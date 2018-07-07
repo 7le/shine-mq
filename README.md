@@ -22,6 +22,15 @@
     private int prefetchSize = 1;
 
     /**
+     * {@link org.springframework.amqp.core.AcknowledgeMode}
+     *
+     * 0 AUTO
+     * 1 MANUAL
+     * 2 NONE
+     */
+    private int acknowledgeMode = 0;
+
+    /**
      * 消费者数量 缺省为CPU核数*2
      */
     private int processSize = Runtime.getRuntime().availableProcessors() << 1;
@@ -45,7 +54,6 @@
      * 是否初始化消息监听者， 若服务只是Producer则关闭
      */
     private boolean listenerEnable = false;
-
 ```
 
 **rabbitmq**的配置复用spring的配置
@@ -67,7 +75,9 @@ shine:
       listener-enable: true
 ```
 
-对于生产者，demo如下，``RabbitmqFactory``已经注入spring容器，可以直接通过``@Autowired``获得
+对于生产者，demo如下，``RabbitmqFactory``已经注入spring容器，可以直接通过``@Autowired``获得。
+
+通过**rabbitmqFactory.add()**可以实现动态增加生产者和消费者。
 
 ```
 @Component
@@ -103,16 +113,16 @@ public class Consumer {
         rabbitmqFactory.start();
     }
 
-    class ProcessorTest extends BaseProcessor {
-
-        private int i = 0;
+    static class ProcessorTest extends BaseProcessor {
+    
         @Override
-        public Object process(Object e) {
-            i = ++i;
-            System.out.println(i + " process: " + e);
+        public Object process(Object msg, Message message, Channel channel) {
+            System.out.println(" process: " + msg);
             try {
                 TimeUnit.SECONDS.sleep(10);
-            } catch (InterruptedException e1) {
+                //如果选择了MANUAL模式 需要手动回执ack
+                channel.basicAck(message.getMessageProperties().getDeliveryTag(),false);
+            } catch (Exception e1) {
                 e1.printStackTrace();
             }
             return null;

@@ -1,8 +1,11 @@
 package top.arkstack.shine.mq;
 
 import com.alibaba.fastjson.JSON;
+import com.rabbitmq.client.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.core.ChannelAwareMessageListener;
 import org.springframework.amqp.support.converter.MessageConverter;
 import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.processor.Processor;
@@ -18,7 +21,7 @@ import java.util.concurrent.ConcurrentMap;
  * @author 7le
  * @version 1.0.0
  */
-public class MessageAdapterHandler {
+public class MessageAdapterHandler implements ChannelAwareMessageListener {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageAdapterHandler.class);
 
@@ -43,10 +46,11 @@ public class MessageAdapterHandler {
         }
     }
 
-    public void receive(byte[] msg) {
-        EventMessage message = JSON.parseObject(new String(msg), EventMessage.class);
-        ProcessorWrap wrap = map.get(message.getQueueName() + "_" + message.getExchangeName() + "_" + message.getRoutingKey());
-        wrap.process(message.getData());
+    @Override
+    public void onMessage(Message message, Channel channel) throws Exception {
+        EventMessage em = JSON.parseObject(message.getBody(), EventMessage.class);
+        ProcessorWrap wrap = map.get(em.getQueueName() + "_" + em.getExchangeName() + "_" + em.getRoutingKey());
+        wrap.process(em.getData(), message, channel);
     }
 
 
@@ -66,8 +70,8 @@ public class MessageAdapterHandler {
             this.processor = processor;
         }
 
-        public Object process(Object msg) {
-            return processor.process(msg);
+        public Object process(Object msg, Message message, Channel channel) {
+            return processor.process(msg, message, channel);
         }
     }
 }

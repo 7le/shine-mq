@@ -95,11 +95,15 @@ public class RabbitmqFactory implements Factory {
      * 初始化消息监听器容器
      */
     private void initMsgListenerAdapter() {
-        MessageListener listener = new MessageListenerAdapter(msgAdapterHandler, "receive");
         listenerContainer = new SimpleMessageListenerContainer();
         listenerContainer.setConnectionFactory(rabbitConnectionFactory);
-        listenerContainer.setAcknowledgeMode(AcknowledgeMode.AUTO);
-        listenerContainer.setMessageListener(listener);
+        if (config.getAcknowledgeMode() == 1) {
+            listenerContainer.setAcknowledgeMode(AcknowledgeMode.MANUAL);
+        } else {
+            listenerContainer.setAcknowledgeMode(
+                    config.getAcknowledgeMode() == 2 ? AcknowledgeMode.NONE : AcknowledgeMode.AUTO);
+        }
+        listenerContainer.setMessageListener(msgAdapterHandler);
         listenerContainer.setErrorHandler(new MessageErrorHandler());
         listenerContainer.setPrefetchCount(config.getPrefetchSize());
         listenerContainer.setConcurrentConsumers(config.getProcessSize());

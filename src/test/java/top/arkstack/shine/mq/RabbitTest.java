@@ -1,7 +1,9 @@
 package top.arkstack.shine.mq;
 
+import com.rabbitmq.client.Channel;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
@@ -71,15 +73,14 @@ public class RabbitTest {
 
     static class ProcessorTest extends BaseProcessor {
 
-        private int i = 0;
-
         @Override
-        public Object process(Object e) {
-            ++i;
-            System.out.println(i + " process: " + e);
+        public Object process(Object msg, Message message, Channel channel) {
+            System.out.println(" process: " + msg);
             try {
-                TimeUnit.SECONDS.sleep(5);
-            } catch (InterruptedException e1) {
+                TimeUnit.SECONDS.sleep(10);
+                //如果选择了MANUAL模式 需要手动回执ack
+                channel.basicAck(message.getMessageProperties().getDeliveryTag(),false);
+            } catch (Exception e1) {
                 e1.printStackTrace();
             }
             return null;

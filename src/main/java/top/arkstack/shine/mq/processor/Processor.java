@@ -1,5 +1,8 @@
 package top.arkstack.shine.mq.processor;
 
+import com.rabbitmq.client.Channel;
+import org.springframework.amqp.core.Message;
+
 /**
  * 消费接口
  *
@@ -8,5 +11,5 @@ package top.arkstack.shine.mq.processor;
  */
 public interface Processor {
 
-    Object process(Object e);
+    Object process(Object msg, Message message, Channel channel);
 }
