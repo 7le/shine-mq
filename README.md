@@ -77,7 +77,7 @@ shine:
 
 对于生产者，demo如下，``RabbitmqFactory``已经注入spring容器，可以直接通过``@Autowired``获得。
 
-通过**rabbitmqFactory.add()**可以实现动态增加生产者和消费者。
+通过**rabbitmqFactory.add**可以实现动态增加生产者和消费者。
 
 ```
 @Component
@@ -88,7 +88,7 @@ public class Producer {
 
     @PostConstruct
     public void pull() throws Exception {
-        rabbitmqFactory.add("queue-test", "exchange-test", "yoyo", null);
+        rabbitmqFactory.add("queue-test", "exchange_test", "yoyo", null);
         rabbitmqFactory.start();
         for (int i = 0; i < 50; i++) {
             rabbitmqFactory.getTemplate().send("queue-test", "exchange-test", "hello world "+i, "yoyo");
@@ -109,7 +109,7 @@ public class Consumer {
 
     @PostConstruct
     public void pull() throws Exception {
-        rabbitmqFactory.add("queue-test", "exchange-test", "yoyo", new ProcessorTest());
+        rabbitmqFactory.add("queue_test", "exchange_test", "yoyo", new ProcessorTest());
         rabbitmqFactory.start();
     }
 
@@ -121,7 +121,7 @@ public class Consumer {
             try {
                 TimeUnit.SECONDS.sleep(10);
                 //如果选择了MANUAL模式 需要手动回执ack
-                channel.basicAck(message.getMessageProperties().getDeliveryTag(),false);
+                //channel.basicAck(message.getMessageProperties().getDeliveryTag(),false);
             } catch (Exception e1) {
                 e1.printStackTrace();
             }
