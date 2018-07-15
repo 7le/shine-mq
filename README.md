@@ -1,5 +1,17 @@
 # shine-mq
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/top.arkstack/shine-mq/badge.svg)](https://maven-badges.herokuapp.com/maven-central/top.arkstack/shine-mq)
+
+### 🐳 maven
+
+```
+<dependency>
+  <groupId>top.arkstack</groupId>
+  <artifactId>shine-web</artifactId>
+  <version>1.0.7-SNAPSHOT</version>
+</dependency>
+```
+
 ### 🌈 使用文档
 
 支持springboot的配置，具体可配置的参数如下：
