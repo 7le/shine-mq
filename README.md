@@ -6,9 +6,9 @@
 
 ```
 <dependency>
-  <groupId>top.arkstack</groupId>
-  <artifactId>shine-web</artifactId>
-  <version>1.0.7-SNAPSHOT</version>
+    <groupId>top.arkstack</groupId>
+    <artifactId>shine-mq</artifactId>
+    <version>1.0.0</version>
 </dependency>
 ```
 
