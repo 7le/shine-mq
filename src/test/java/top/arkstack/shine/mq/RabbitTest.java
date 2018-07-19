@@ -26,7 +26,7 @@ public class RabbitTest {
         RabbitmqFactory factory = RabbitmqFactory.getInstance(mqProperties,
                 new CachingConnectionFactory(getRabbitConnectionFactoryBean(properties).getObject()));
         template = factory.getTemplate();
-        factory.add("shine_queue", "shine_exchange", "shine", new ProcessorTest());
+        factory.add("shine-queue", "shine-exchange", "shine", new ProcessorTest());
         factory.start();
     }
 
@@ -34,7 +34,7 @@ public class RabbitTest {
     public void send() throws Exception {
 
         for (int i = 0; i < 50; i++) {
-            template.send("shine_queue", "shine_exchange", "shine " + i, "shine");
+            template.send("shine-queue", "shine-exchange", "shine " + i, "shine");
         }
 
         TimeUnit.SECONDS.sleep(600);

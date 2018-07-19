@@ -100,7 +100,7 @@ public class Producer {
 
     @PostConstruct
     public void pull() throws Exception {
-        rabbitmqFactory.add("queue-test", "exchange_test", "yoyo", null);
+        rabbitmqFactory.add("queue-test", "exchange-test", "yoyo", null);
         rabbitmqFactory.start();
         for (int i = 0; i < 50; i++) {
             rabbitmqFactory.getTemplate().send("queue-test", "exchange-test", "hello world "+i, "yoyo");
@@ -121,7 +121,7 @@ public class Consumer {
 
     @PostConstruct
     public void pull() throws Exception {
-        rabbitmqFactory.add("queue_test", "exchange_test", "yoyo", new ProcessorTest());
+        rabbitmqFactory.add("queue-test", "exchange-test", "yoyo", new ProcessorTest());
         rabbitmqFactory.start();
     }
 
