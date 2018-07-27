@@ -61,5 +61,5 @@ public class RabbitmqProperties {
     /**
      * 是否初始化消息监听者， 若服务只是Producer则关闭
      */
-    private boolean listenerEnable = true;
+    private boolean listenerEnable = false;
 }
