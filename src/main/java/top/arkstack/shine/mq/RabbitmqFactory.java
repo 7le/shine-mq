@@ -75,7 +75,7 @@ public class RabbitmqFactory implements Factory {
         Set<String> mapping = msgAdapterHandler.getAllBinding();
         for (String relation : mapping) {
             String[] relaArr = relation.split("_");
-            declareBinding(relaArr[0], relaArr[1], relaArr[2]);
+            declareBinding(relaArr[0], relaArr[1], relaArr[2], true);
         }
         if (config.isListenerEnable()) {
             initMsgListenerAdapter();
@@ -119,15 +119,20 @@ public class RabbitmqFactory implements Factory {
 
     @Override
     public Factory add(String queueName, String exchangeName, String routingKey, Processor processor, MessageConverter messageConverter) {
-        msgAdapterHandler.add(queueName, exchangeName, routingKey, processor, messageConverter);
-        if (isStarted.get() && config.isListenerEnable()) {
-            declareBinding(queueName, exchangeName, routingKey);
-            listenerContainer.setQueues(queues.values().toArray(new Queue[queues.size()]));
+        if (processor != null) {
+            msgAdapterHandler.add(queueName, exchangeName, routingKey, processor, messageConverter);
+            if (isStarted.get() && config.isListenerEnable()) {
+                declareBinding(queueName, exchangeName, routingKey, true);
+                listenerContainer.setQueues(queues.values().toArray(new Queue[queues.size()]));
+            }
+            return this;
+        } else {
+            declareBinding(queueName, exchangeName, routingKey, false);
+            return this;
         }
-        return this;
     }
 
-    private synchronized void declareBinding(String queueName, String exchangeName, String routingKey) {
+    private synchronized void declareBinding(String queueName, String exchangeName, String routingKey, boolean isPutQueue) {
         String bindRelation = queueName + "_" + exchangeName + "_" + routingKey;
         if (bind.contains(bindRelation)) {
             return;
@@ -143,7 +148,9 @@ public class RabbitmqFactory implements Factory {
         Queue queue = queues.get(queueName);
         if (queue == null) {
             queue = new Queue(queueName, config.isDurable(), config.isExclusive(), config.isAutoDelete());
-            queues.put(queueName, queue);
+            if (isPutQueue) {
+                queues.put(queueName, queue);
+            }
             rabbitAdmin.declareQueue(queue);
             needBinding = true;
         }
