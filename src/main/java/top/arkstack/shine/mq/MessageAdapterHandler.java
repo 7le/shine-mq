@@ -2,6 +2,7 @@ package top.arkstack.shine.mq;
 
 import com.alibaba.fastjson.JSON;
 import com.rabbitmq.client.Channel;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -21,6 +22,7 @@ import java.util.concurrent.ConcurrentMap;
  * @author 7le
  * @version 1.0.0
  */
+@Slf4j
 public class MessageAdapterHandler implements ChannelAwareMessageListener {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageAdapterHandler.class);
@@ -48,9 +50,15 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
 
     @Override
     public void onMessage(Message message, Channel channel) throws Exception {
-        EventMessage em = JSON.parseObject(message.getBody(), EventMessage.class);
-        ProcessorWrap wrap = map.get(em.getQueueName() + "_" + em.getExchangeName() + "_" + em.getRoutingKey());
-        wrap.process(em.getData(), message, channel);
+        EventMessage em;
+        try {
+            em = JSON.parseObject(message.getBody(), EventMessage.class);
+            ProcessorWrap wrap = map.get(em.getQueueName() + "_" + em.getExchangeName() + "_" + em.getRoutingKey());
+            wrap.process(em.getData(), message, channel);
+        } catch (Exception e) {
+            //TODO 后续可以提供回调，供使用者自定义
+            log.error("MessageAdapterHandler {} error :", message.getBody(), e);
+        }
     }
 
 
