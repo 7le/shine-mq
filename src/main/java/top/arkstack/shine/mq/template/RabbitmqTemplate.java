@@ -55,6 +55,21 @@ public class RabbitmqTemplate implements Template {
         return this.send(queueName, exchangeName, msg, messageConverter, SendTypeEnum.RPC, queueName, 0, 0);
     }
 
+    @Override
+    public void sendDirect(String queueName, String exchangeName, Object msg, String routingKey) throws Exception {
+        this.sendDirect(queueName, exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, 0, 0);
+    }
+
+    @Override
+    public void sendDirect(String queueName, String exchangeName, Object msg, String routingKey, int expiration) throws Exception {
+        this.sendDirect(queueName, exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, expiration, 0);
+    }
+
+    @Override
+    public void sendDirect(String queueName, String exchangeName, Object msg, String routingKey, int expiration, int priority) throws Exception {
+        this.sendDirect(queueName, exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, expiration, priority);
+    }
+
 
     private Object send(String queueName, String exchangeName, Object msg,
                         MessageConverter messageConverter, SendTypeEnum type, String routingKey, int expiration, int priority) throws Exception {
@@ -83,6 +98,37 @@ public class RabbitmqTemplate implements Template {
             }
         } catch (AmqpException e) {
             logger.error("send event fail. Event Message : [{}]", eventMessage, e);
+            throw new Exception("send event fail", e);
+        }
+        return obj;
+    }
+
+    private Object sendDirect(String queueName, String exchangeName, Object msg,
+                        MessageConverter messageConverter, SendTypeEnum type, String routingKey, int expiration, int priority) throws Exception {
+        Objects.requireNonNull(queueName, "The queueName is empty.");
+        Objects.requireNonNull(exchangeName, "The exchangeName is empty.");
+        Objects.requireNonNull(routingKey, "The routingKey is empty.");
+        Objects.requireNonNull(messageConverter, "The messageConverter is empty.");
+
+        Object obj = null;
+        MessageProperties messageProperties = new MessageProperties();
+        //过期时间
+        if (expiration > 0) {
+            messageProperties.setExpiration(String.valueOf(expiration));
+        }
+        //消息优先级
+        if (priority > 0) {
+            messageProperties.setPriority(priority);
+        }
+        Message message = messageConverter.toMessage(msg, messageProperties);
+        try {
+            if (SendTypeEnum.RPC.equals(type)) {
+                obj = eventAmqpTemplate.convertSendAndReceive(routingKey, message);
+            } else {
+                eventAmqpTemplate.send(exchangeName, routingKey, message);
+            }
+        } catch (AmqpException e) {
+            logger.error("send event fail. Event Message : [{}]", msg, e);
             throw new Exception("send event fail", e);
         }
         return obj;
