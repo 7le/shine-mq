@@ -26,7 +26,7 @@ public class RabbitTest {
         RabbitmqFactory factory = RabbitmqFactory.getInstance(mqProperties,
                 new CachingConnectionFactory(getRabbitConnectionFactoryBean(properties).getObject()));
         template = factory.getTemplate();
-        factory.add("shine-queue", "shine-exchange", "shine", new ProcessorTest());
+        factory.add("shine-queue", "shine-exchange", "shine", new ProcessorTest(), null);
         factory.start();
     }
 

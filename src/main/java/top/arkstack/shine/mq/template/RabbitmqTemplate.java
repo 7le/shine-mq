@@ -50,24 +50,36 @@ public class RabbitmqTemplate implements Template {
     }
 
     @Override
+    public void send(String queueName, String exchangeName, Object msg, String routingKey,
+                     int expiration, int priority, SendTypeEnum type) throws Exception {
+        this.send(queueName, exchangeName, msg, messageConverter, type, routingKey, expiration, priority);
+    }
+
+    @Override
     @Deprecated
     public Object sendAndReceive(String queueName, String exchangeName, Object msg) throws Exception {
         return this.send(queueName, exchangeName, msg, messageConverter, SendTypeEnum.RPC, queueName, 0, 0);
     }
 
     @Override
-    public void sendDirect(String queueName, String exchangeName, Object msg, String routingKey) throws Exception {
-        this.sendDirect(queueName, exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, 0, 0);
+    public void sendSimple(String queueName, String exchangeName, Object msg, String routingKey) throws Exception {
+        this.sendSimple(queueName, exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, 0, 0);
     }
 
     @Override
-    public void sendDirect(String queueName, String exchangeName, Object msg, String routingKey, int expiration) throws Exception {
-        this.sendDirect(queueName, exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, expiration, 0);
+    public void sendSimple(String queueName, String exchangeName, Object msg, String routingKey, int expiration) throws Exception {
+        this.sendSimple(queueName, exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, expiration, 0);
     }
 
     @Override
-    public void sendDirect(String queueName, String exchangeName, Object msg, String routingKey, int expiration, int priority) throws Exception {
-        this.sendDirect(queueName, exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, expiration, priority);
+    public void sendSimple(String queueName, String exchangeName, Object msg, String routingKey, int expiration, int priority) throws Exception {
+        this.sendSimple(queueName, exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, expiration, priority);
+    }
+
+    @Override
+    public void sendSimple(String queueName, String exchangeName, Object msg, String routingKey,
+                     int expiration, int priority, SendTypeEnum type) throws Exception {
+        this.sendSimple(queueName, exchangeName, msg, messageConverter, type, routingKey, expiration, priority);
     }
 
 
@@ -79,7 +91,7 @@ public class RabbitmqTemplate implements Template {
         Objects.requireNonNull(messageConverter, "The messageConverter is empty.");
 
         Object obj = null;
-        EventMessage eventMessage = new EventMessage(queueName, exchangeName, routingKey, msg);
+        EventMessage eventMessage = new EventMessage(queueName, exchangeName, routingKey, type.toString(), msg);
         MessageProperties messageProperties = new MessageProperties();
         //过期时间
         if (expiration > 0) {
@@ -103,8 +115,8 @@ public class RabbitmqTemplate implements Template {
         return obj;
     }
 
-    private Object sendDirect(String queueName, String exchangeName, Object msg,
-                        MessageConverter messageConverter, SendTypeEnum type, String routingKey, int expiration, int priority) throws Exception {
+    private Object sendSimple(String queueName, String exchangeName, Object msg,
+                              MessageConverter messageConverter, SendTypeEnum type, String routingKey, int expiration, int priority) throws Exception {
         Objects.requireNonNull(queueName, "The queueName is empty.");
         Objects.requireNonNull(exchangeName, "The exchangeName is empty.");
         Objects.requireNonNull(routingKey, "The routingKey is empty.");

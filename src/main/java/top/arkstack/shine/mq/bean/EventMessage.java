@@ -23,5 +23,7 @@ public class EventMessage implements Serializable {
 
     private String routingKey;
 
+    private String sendTypeEnum;
+
     private Object data;
 }
