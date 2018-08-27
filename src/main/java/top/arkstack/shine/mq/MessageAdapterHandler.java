@@ -30,8 +30,11 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
 
     private ConcurrentMap<String, ProcessorWrap> map;
 
+    private ConcurrentMap<String, ProcessorWrap> topicMap;
+
     protected MessageAdapterHandler() {
         this.map = new ConcurrentHashMap<>();
+        this.topicMap = new ConcurrentHashMap<>();
     }
 
     protected void add(String queueName, String exchangeName, String routingKey,
@@ -43,6 +46,9 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
         Objects.requireNonNull(routingKey, "The routingKey is empty.");
 
         ProcessorWrap pw = new ProcessorWrap(messageConverter, processor);
+        if (type != null && SendTypeEnum.TOPIC == type) {
+            topicMap.putIfAbsent(exchangeName + "_" + routingKey + "_" + type, pw);
+        }
         ProcessorWrap oldProcessorWrap = map.putIfAbsent(queueName + "_" + exchangeName + "_" + routingKey + "_" +
                 (type == null ? SendTypeEnum.DIRECT.toString() : type.toString()), pw);
         if (oldProcessorWrap != null) {
@@ -51,12 +57,17 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
     }
 
     @Override
-    public void onMessage(Message message, Channel channel) throws Exception {
+    public void onMessage(Message message, Channel channel) {
         EventMessage em;
         try {
             em = JSON.parseObject(message.getBody(), EventMessage.class);
-            ProcessorWrap wrap = map.get(em.getQueueName() + "_" + em.getExchangeName() + "_" + em.getRoutingKey()
-                    + "_" + em.getSendTypeEnum());
+            ProcessorWrap wrap;
+            if (SendTypeEnum.TOPIC.toString().equals(em.getSendTypeEnum())) {
+                wrap = topicMap.get(em.getExchangeName() + "_" + em.getRoutingKey() + "_" + em.getSendTypeEnum());
+            } else {
+                wrap = map.get(em.getQueueName() + "_" + em.getExchangeName() + "_" + em.getRoutingKey()
+                        + "_" + em.getSendTypeEnum());
+            }
             wrap.process(em.getData(), message, channel);
         } catch (Exception e) {
             //TODO 后续可以提供回调，供使用者自定义
