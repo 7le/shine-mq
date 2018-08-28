@@ -9,13 +9,13 @@
 <dependency>
     <groupId>top.arkstack</groupId>
     <artifactId>shine-mq</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 ```
 
 ### 🌈 使用文档
 
-支持springboot的配置，具体可配置的参数如下：
+目前兼容Direct和Topic模式，支持springboot的配置，具体可配置的参数如下：
 
 ```
     /**
@@ -122,7 +122,7 @@ public class Consumer {
 
     @PostConstruct
     public void pull() throws Exception {
-        rabbitmqFactory.add("queue-test", "exchange-test", "yoyo", new ProcessorTest());
+        rabbitmqFactory.add("queue-test", "exchange-test", "yoyo", new ProcessorTest(), null);
         rabbitmqFactory.start();
     }
 
