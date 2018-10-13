@@ -13,6 +13,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("shine.mq")
 public class MqProperties {
 
+    private final Distributed distributed=new Distributed();
+
+    @Data
     public static class Distributed{
 
         /**

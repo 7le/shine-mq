@@ -34,7 +34,7 @@ public class MqAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "shine.mq.Distributed.transaction", havingValue = "true")
+    @ConditionalOnProperty(name = "shine.mq.distributed.transaction", havingValue = "true")
     public RabbitTemplate rabbitmqTemplate(RabbitmqFactory rabbitmqFactory) {
         RabbitTemplate template = rabbitmqFactory.getRabbitTemplate();
         //消息发送到RabbitMQ交换器后接收ack回调
