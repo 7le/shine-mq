@@ -9,7 +9,7 @@
 <dependency>
     <groupId>top.arkstack</groupId>
     <artifactId>shine-mq</artifactId>
-    <version>1.0.3</version>
+    <version>1.1.0-SNAPSHOT</version>
 </dependency>
 ```
 

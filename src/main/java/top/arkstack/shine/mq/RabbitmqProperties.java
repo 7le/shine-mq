@@ -4,7 +4,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * 消息队列的配置信息
+ * 消息队列的配置信息 （rabbitmq）
  *
  * @author 7le
  * @version 1.0.0

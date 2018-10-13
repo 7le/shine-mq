@@ -35,7 +35,7 @@ public class RabbitmqFactory implements Factory {
 
     private RabbitAdmin rabbitAdmin;
 
-    private static RabbitTemplate rabbitTemplate;
+    protected RabbitTemplate rabbitTemplate;
 
     private Template template;
 
