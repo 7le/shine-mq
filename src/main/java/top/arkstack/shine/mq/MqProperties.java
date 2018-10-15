@@ -13,10 +13,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("shine.mq")
 public class MqProperties {
 
-    private final Distributed distributed=new Distributed();
+    private final Distributed distributed = new Distributed();
 
     @Data
-    public static class Distributed{
+    public static class Distributed {
 
         /**
          * 是否初始化 开启分布式事务 缺省为false

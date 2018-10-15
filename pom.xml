@@ -27,6 +27,7 @@
         <lombok.version>1.16.22</lombok.version>
         <rabbit-amqp-client.version>5.1.2</rabbit-amqp-client.version>
         <spring.boot>2.0.3.RELEASE</spring.boot>
+        <aspectj.version>1.8.13</aspectj.version>
     </properties>
 
     <dependencies>
@@ -112,6 +113,13 @@
             <artifactId>jackson-annotations</artifactId>
             <version>2.4.4</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjrt</artifactId>
+            <version>${aspectj.version}</version>
+        </dependency>
+
     </dependencies>
 
     <distributionManagement>
