@@ -6,7 +6,7 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.DirectMessageListenerContainer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import top.arkstack.shine.mq.bean.SendTypeEnum;
@@ -15,7 +15,6 @@ import top.arkstack.shine.mq.template.RabbitmqTemplate;
 import top.arkstack.shine.mq.template.Template;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * rabbitmq工厂
@@ -41,15 +40,13 @@ public class RabbitmqFactory implements Factory {
 
     private MessageAdapterHandler msgAdapterHandler = new MessageAdapterHandler();
 
-    private SimpleMessageListenerContainer listenerContainer;
+    private DirectMessageListenerContainer listenerContainer;
 
     private Map<String, Queue> queues = new HashMap<>();
 
     private Set<String> bind = new HashSet<>();
 
     private Map<String, Exchange> exchanges = new HashMap<>();
-
-    private AtomicBoolean isStarted = new AtomicBoolean(false);
 
     /**
      * 缺省序列化方式 Jackson2JsonMessageConverter
@@ -66,22 +63,6 @@ public class RabbitmqFactory implements Factory {
         template = new RabbitmqTemplate(rabbitTemplate, serializerMessageConverter);
     }
 
-    @Override
-    public void start() {
-        if (isStarted.get()) {
-            return;
-        }
-        Set<String> mapping = msgAdapterHandler.getAllBinding();
-        for (String relation : mapping) {
-            String[] relaArr = relation.split("_");
-            declareBinding(relaArr[0], relaArr[1], relaArr[2], true, relaArr[3]);
-        }
-        if (config.isListenerEnable()) {
-            initMsgListenerAdapter();
-        }
-        isStarted.set(true);
-    }
-
     public synchronized static RabbitmqFactory getInstance(RabbitmqProperties config, CachingConnectionFactory factory) {
         rabbitConnectionFactory = factory;
         if (rabbitmqFactory == null) {
@@ -94,7 +75,7 @@ public class RabbitmqFactory implements Factory {
      * 初始化消息监听器容器
      */
     private void initMsgListenerAdapter() {
-        listenerContainer = new SimpleMessageListenerContainer();
+        listenerContainer = new DirectMessageListenerContainer();
         listenerContainer.setConnectionFactory(rabbitConnectionFactory);
         if (config.getAcknowledgeMode() == 1) {
             listenerContainer.setAcknowledgeMode(AcknowledgeMode.MANUAL);
@@ -104,9 +85,12 @@ public class RabbitmqFactory implements Factory {
         }
         listenerContainer.setMessageListener(msgAdapterHandler);
         listenerContainer.setErrorHandler(new MessageErrorHandler());
-        listenerContainer.setPrefetchCount(config.getPrefetchSize());
-        listenerContainer.setConcurrentConsumers(config.getProcessSize());
-        listenerContainer.setTxSize(config.getPrefetchSize());
+        if (config.getPrefetchCount() != null) {
+            listenerContainer.setPrefetchCount(config.getPrefetchCount());
+        }
+        if (config.getConsumersPerQueue() != null) {
+            listenerContainer.setConsumersPerQueue(config.getConsumersPerQueue());
+        }
         listenerContainer.setQueues(queues.values().toArray(new Queue[queues.size()]));
         listenerContainer.start();
     }
@@ -121,14 +105,19 @@ public class RabbitmqFactory implements Factory {
                        MessageConverter messageConverter) {
         if (processor != null) {
             msgAdapterHandler.add(queueName, exchangeName, routingKey, processor, type, messageConverter);
-            if (isStarted.get() && config.isListenerEnable()) {
+            if (config.isListenerEnable()) {
                 declareBinding(queueName, exchangeName, routingKey, true,
-                        (type == null ? SendTypeEnum.DIRECT.toString() : type.toString()));
-                listenerContainer.setQueues(queues.values().toArray(new Queue[queues.size()]));
+                        type == null ? SendTypeEnum.DIRECT.toString() : type.toString());
+                if (listenerContainer == null) {
+                    initMsgListenerAdapter();
+                } else {
+                    listenerContainer.addQueueNames(queueName);
+                }
             }
             return this;
         } else {
-            declareBinding(queueName, exchangeName, routingKey, false, type.toString());
+            declareBinding(queueName, exchangeName, routingKey, false,
+                    type == null ? SendTypeEnum.DIRECT.toString() : type.toString());
             return this;
         }
     }
