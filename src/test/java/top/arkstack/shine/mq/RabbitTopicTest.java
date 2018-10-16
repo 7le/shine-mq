@@ -1,6 +1,5 @@
 package top.arkstack.shine.mq;
 
-import com.rabbitmq.client.ConnectionFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -11,6 +10,7 @@ import top.arkstack.shine.mq.bean.SendTypeEnum;
 import top.arkstack.shine.mq.template.Template;
 
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,16 +34,16 @@ public class RabbitTopicTest {
         properties.setPassword("guest");
         RabbitmqProperties mqProperties = new RabbitmqProperties();
         mqProperties.setListenerEnable(true);
-        RabbitmqFactory factory = RabbitmqFactory.getInstance(mqProperties, new CachingConnectionFactory((ConnectionFactory)this.getRabbitConnectionFactoryBean(properties).getObject()));
+        RabbitmqFactory factory = RabbitmqFactory.getInstance(mqProperties,
+                new CachingConnectionFactory(Objects.requireNonNull(this.getRabbitConnectionFactoryBean(properties).getObject())));
         this.template = factory.getTemplate();
         factory.add("shine-queue-topic", "shine-exchange-topic", "shine", new RabbitTest.ProcessorTest(), SendTypeEnum.TOPIC);
-        factory.start();
     }
 
     @Test
     public void send() throws Exception {
         for(int i = 0; i < 5; ++i) {
-            this.template.send("shine-queue-topic", "shine-exchange-topic", "shine " + i, "shine", 0, 0, SendTypeEnum.TOPIC);
+            this.template.send("shine-exchange-topic", "shine " + i, "shine", 0, 0, SendTypeEnum.TOPIC);
         }
 
         TimeUnit.SECONDS.sleep(600L);

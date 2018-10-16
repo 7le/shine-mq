@@ -12,6 +12,7 @@ import top.arkstack.shine.mq.processor.BaseProcessor;
 import top.arkstack.shine.mq.template.Template;
 
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class RabbitTest {
@@ -24,17 +25,16 @@ public class RabbitTest {
         RabbitProperties properties = new RabbitProperties();
         RabbitmqProperties mqProperties = new RabbitmqProperties();
         RabbitmqFactory factory = RabbitmqFactory.getInstance(mqProperties,
-                new CachingConnectionFactory(getRabbitConnectionFactoryBean(properties).getObject()));
+                new CachingConnectionFactory(Objects.requireNonNull(getRabbitConnectionFactoryBean(properties).getObject())));
         template = factory.getTemplate();
         factory.add("shine-queue", "shine-exchange", "shine", new ProcessorTest(), null);
-        factory.start();
     }
 
     @Test
     public void send() throws Exception {
 
         for (int i = 0; i < 50; i++) {
-            template.send("shine-queue", "shine-exchange", "shine " + i, "shine");
+            template.send("shine-exchange", "shine " + i, "shine");
         }
 
         TimeUnit.SECONDS.sleep(600);

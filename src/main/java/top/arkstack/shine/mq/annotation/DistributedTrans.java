@@ -18,20 +18,21 @@ public @interface DistributedTrans {
     /**
      *  交换机
      */
-    String exchange() default MqConstant.DISTUBUTED_TRANSCATION_EXCHANGE;
+    String exchange() default MqConstant.DISTRIBUTED_TRANSACTION_EXCHANGE;
 
     /**
      * 路由key
      */
-    String routeKey() default MqConstant.DISTUBUTED_TRANSCATION_ROUTEKEY;
+    String routeKey() default MqConstant.DISTRIBUTED_TRANSACTION_ROUTEKEY;
 
     /**
      * 业务id
+     * 需要自定义，以防重复
      */
-    String bizId() default MqConstant.DISTUBUTED_TRANSCATION_BIZID;
+    String bizId() default MqConstant.DISTRIBUTED_TRANSACTION_BIZID;
 
     /**
-     * 持久化方式c
+     * 持久化方式
      */
-    String coordinator() default MqConstant.DISTUBUTED_TRANSCATION_COORDINATOR;
+    String coordinator() default MqConstant.DISTRIBUTED_TRANSACTION_COORDINATOR;
 }

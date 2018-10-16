@@ -30,26 +30,19 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
 
     private ConcurrentMap<String, ProcessorWrap> map;
 
-    private ConcurrentMap<String, ProcessorWrap> topicMap;
-
     protected MessageAdapterHandler() {
         this.map = new ConcurrentHashMap<>();
-        this.topicMap = new ConcurrentHashMap<>();
     }
 
-    protected void add(String queueName, String exchangeName, String routingKey,
-                       Processor processor, SendTypeEnum type, MessageConverter messageConverter) {
+    protected void add(String exchangeName, String routingKey, Processor processor, SendTypeEnum type,
+                       MessageConverter messageConverter) {
 
-        Objects.requireNonNull(queueName, "The queueName is empty.");
         Objects.requireNonNull(exchangeName, "The exchangeName is empty.");
         Objects.requireNonNull(messageConverter, "The messageConverter is empty.");
         Objects.requireNonNull(routingKey, "The routingKey is empty.");
 
         ProcessorWrap pw = new ProcessorWrap(messageConverter, processor);
-        if (type != null && SendTypeEnum.TOPIC == type) {
-            topicMap.putIfAbsent(exchangeName + "_" + routingKey + "_" + type, pw);
-        }
-        ProcessorWrap oldProcessorWrap = map.putIfAbsent(queueName + "_" + exchangeName + "_" + routingKey + "_" +
+        ProcessorWrap oldProcessorWrap = map.putIfAbsent(exchangeName + "_" + routingKey + "_" +
                 (type == null ? SendTypeEnum.DIRECT.toString() : type.toString()), pw);
         if (oldProcessorWrap != null) {
             logger.warn("The processor of this queue and exchange exists");
@@ -61,13 +54,7 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
         EventMessage em;
         try {
             em = JSON.parseObject(message.getBody(), EventMessage.class);
-            ProcessorWrap wrap;
-            if (SendTypeEnum.TOPIC.toString().equals(em.getSendTypeEnum())) {
-                wrap = topicMap.get(em.getExchangeName() + "_" + em.getRoutingKey() + "_" + em.getSendTypeEnum());
-            } else {
-                wrap = map.get(em.getQueueName() + "_" + em.getExchangeName() + "_" + em.getRoutingKey()
-                        + "_" + em.getSendTypeEnum());
-            }
+            ProcessorWrap wrap = map.get(em.getExchangeName() + "_" + em.getRoutingKey() + "_" + em.getSendTypeEnum());
             wrap.process(em.getData(), message, channel);
         } catch (Exception e) {
             //TODO 后续可以提供回调，供使用者自定义

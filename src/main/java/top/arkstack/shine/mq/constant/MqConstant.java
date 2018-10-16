@@ -8,11 +8,17 @@ package top.arkstack.shine.mq.constant;
  */
 public class MqConstant {
 
-    public final static String DISTUBUTED_TRANSCATION_EXCHANGE="";
+    public static final String DISTRIBUTED_TRANSACTION_EXCHANGE = "";
 
-    public final static String DISTUBUTED_TRANSCATION_ROUTEKEY="";
+    public static final String DISTRIBUTED_TRANSACTION_ROUTEKEY = "";
 
-    public final static String DISTUBUTED_TRANSCATION_BIZID="";
+    public static final String DISTRIBUTED_TRANSACTION_BIZID = "";
 
-    public final static String DISTUBUTED_TRANSCATION_COORDINATOR="";
+    public static final String DISTRIBUTED_TRANSACTION_COORDINATOR = "";
+
+    public static final String SPLIT = "_";
+
+    public static final String TIME = "yyyy-MM-dd HH:mm:ss";
+
+    public static final String DATA_DEFAULT = "";
 }

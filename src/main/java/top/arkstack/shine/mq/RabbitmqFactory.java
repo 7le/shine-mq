@@ -104,7 +104,7 @@ public class RabbitmqFactory implements Factory {
     public Factory add(String queueName, String exchangeName, String routingKey, Processor processor, SendTypeEnum type,
                        MessageConverter messageConverter) {
         if (processor != null) {
-            msgAdapterHandler.add(queueName, exchangeName, routingKey, processor, type, messageConverter);
+            msgAdapterHandler.add(exchangeName, routingKey, processor, type, messageConverter);
             if (config.isListenerEnable()) {
                 declareBinding(queueName, exchangeName, routingKey, true,
                         type == null ? SendTypeEnum.DIRECT.toString() : type.toString());
@@ -161,4 +161,11 @@ public class RabbitmqFactory implements Factory {
         }
     }
 
+    /**
+     * 扩展消息的CorrelationData，方便在回调中应用
+     */
+    public void setCorrelationData(String coordinator){
+        rabbitTemplate.setCorrelationDataPostProcessor(((message, correlationData) ->
+                new CorrelationDataExt(correlationData != null ? correlationData.getId() : null, coordinator)));
+    }
 }
