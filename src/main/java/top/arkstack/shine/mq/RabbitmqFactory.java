@@ -65,6 +65,8 @@ public class RabbitmqFactory implements Factory {
 
     public synchronized static RabbitmqFactory getInstance(RabbitmqProperties config, CachingConnectionFactory factory) {
         rabbitConnectionFactory = factory;
+        //设置生成者确认机制
+        rabbitConnectionFactory.setPublisherConfirms(true);
         if (rabbitmqFactory == null) {
             rabbitmqFactory = new RabbitmqFactory(config);
         }
@@ -164,8 +166,8 @@ public class RabbitmqFactory implements Factory {
     /**
      * 扩展消息的CorrelationData，方便在回调中应用
      */
-    public void setCorrelationData(String coordinator){
+    public void setCorrelationData(String bizId, String coordinator) {
         rabbitTemplate.setCorrelationDataPostProcessor(((message, correlationData) ->
-                new CorrelationDataExt(correlationData != null ? correlationData.getId() : null, coordinator)));
+                new CorrelationDataExt(bizId, coordinator)));
     }
 }

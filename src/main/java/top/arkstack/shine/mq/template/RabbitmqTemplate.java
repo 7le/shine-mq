@@ -26,8 +26,8 @@ public class RabbitmqTemplate implements Template {
 
     private MessageConverter messageConverter;
 
-    public RabbitmqTemplate(AmqpTemplate eopAmqpTemplate, MessageConverter messageConverter) {
-        this.eventAmqpTemplate = eopAmqpTemplate;
+    public RabbitmqTemplate(AmqpTemplate amqpTemplate, MessageConverter messageConverter) {
+        this.eventAmqpTemplate = amqpTemplate;
         this.messageConverter = messageConverter;
     }
 

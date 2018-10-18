@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import top.arkstack.shine.mq.RabbitmqFactory;
+import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.coordinator.Coordinator;
 
@@ -39,33 +40,42 @@ public class DistributedTransAspect {
         log.info("Start distributed transaction : {} ", trans);
         String exchange = trans.exchange();
         String routeKey = trans.routeKey();
-        String bizId = trans.bizId();
         String coordinatorName = trans.coordinator();
-        String bizName = trans.bizId() + MqConstant.SPLIT + getTime();
+        String msgId = trans.bizId() + MqConstant.SPLIT + getTime();
 
         Coordinator coordinator;
         try {
             coordinator = (Coordinator) context.getBean(coordinatorName);
         } catch (Exception e) {
             log.error("No coordinator or not joined the spring container : ", e);
-            return;
+            throw e;
         }
 
         //发送前暂存消息
-        coordinator.setPrepare(bizName);
+        coordinator.setPrepare(msgId);
         Object data;
         try {
             data = pjp.proceed();
         } catch (Exception e) {
-            log.error("Biz execution failed, id : {} :", bizName, e);
+            log.error("Biz execution failed, id : {} :", msgId, e);
+            //消息未发出 清理之前暂存的消息状态
+            coordinator.delStatus(msgId);
             throw e;
         }
         if (data == null) {
             data = MqConstant.DATA_DEFAULT;
         }
-
-        rabbitmqFactory.setCorrelationData(bizId);
-        rabbitmqFactory.getTemplate().send(exchange, data, routeKey);
+        coordinator.setReady(msgId, new EventMessage(exchange, routeKey, null, data));
+        try {
+            rabbitmqFactory.setCorrelationData(msgId, coordinatorName);
+            rabbitmqFactory.add(exchange, exchange, routeKey, null, null);
+            rabbitmqFactory.getTemplate().send(exchange, data, routeKey);
+        } catch (Exception e) {
+            log.error("Message failed to be sent : ", e);
+            //消息未发出 清理之前暂存的消息状态
+            coordinator.delStatus(msgId);
+            throw e;
+        }
 
     }
 

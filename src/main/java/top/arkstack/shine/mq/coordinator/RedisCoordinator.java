@@ -1,6 +1,7 @@
 package top.arkstack.shine.mq.coordinator;
 
 import top.arkstack.shine.mq.bean.EventMessage;
+
 import java.util.List;
 
 /**
@@ -14,12 +15,12 @@ public class RedisCoordinator implements Coordinator{
     }
 
     @Override
-    public void setReady(String msgId, EventMessage rabbitMetaMessage) {
+    public void setReady(String msgId, EventMessage message) {
 
     }
 
     @Override
-    public void setSuccess(String msgId) {
+    public void delStatus(String msgId) {
 
     }
 

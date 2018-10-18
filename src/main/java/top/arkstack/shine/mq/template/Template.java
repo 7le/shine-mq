@@ -19,7 +19,7 @@ public interface Template {
      * @param routingKey   路由密钥
      * @throws Exception
      */
-    void send( String exchangeName, Object msg, String routingKey) throws Exception;
+    void send(String exchangeName, Object msg, String routingKey) throws Exception;
 
 
     /**
