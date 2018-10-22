@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.DirectMessageListenerContainer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.bean.SendTypeEnum;
 import top.arkstack.shine.mq.processor.Processor;
 import top.arkstack.shine.mq.template.RabbitmqTemplate;
@@ -28,7 +29,9 @@ public class RabbitmqFactory implements Factory {
 
     private static RabbitmqFactory rabbitmqFactory;
 
-    private RabbitmqProperties config;
+    private MqProperties config;
+
+    private MqProperties.Rabbit rabbit;
 
     private static CachingConnectionFactory rabbitConnectionFactory;
 
@@ -54,19 +57,23 @@ public class RabbitmqFactory implements Factory {
     private MessageConverter serializerMessageConverter = new Jackson2JsonMessageConverter();
 
 
-    private RabbitmqFactory(RabbitmqProperties config) {
+    private RabbitmqFactory(MqProperties config) {
         Objects.requireNonNull(config, "The RabbitmqProperties is empty.");
         this.config = config;
+        this.rabbit = config.getRabbit();
         rabbitAdmin = new RabbitAdmin(rabbitConnectionFactory);
         rabbitTemplate = new RabbitTemplate(rabbitConnectionFactory);
         rabbitTemplate.setMessageConverter(serializerMessageConverter);
         template = new RabbitmqTemplate(rabbitTemplate, serializerMessageConverter);
     }
 
-    public synchronized static RabbitmqFactory getInstance(RabbitmqProperties config, CachingConnectionFactory factory) {
+    public synchronized static RabbitmqFactory getInstance(MqProperties config, CachingConnectionFactory factory) {
         rabbitConnectionFactory = factory;
         //设置生成者确认机制
         rabbitConnectionFactory.setPublisherConfirms(true);
+        if (config.getRabbit().getChannelCacheSize() != null) {
+            rabbitConnectionFactory.setConnectionCacheSize(config.getRabbit().getChannelCacheSize());
+        }
         if (rabbitmqFactory == null) {
             rabbitmqFactory = new RabbitmqFactory(config);
         }
@@ -79,19 +86,19 @@ public class RabbitmqFactory implements Factory {
     private void initMsgListenerAdapter() {
         listenerContainer = new DirectMessageListenerContainer();
         listenerContainer.setConnectionFactory(rabbitConnectionFactory);
-        if (config.getAcknowledgeMode() == 1) {
+        if (rabbit.getAcknowledgeMode() == 1) {
             listenerContainer.setAcknowledgeMode(AcknowledgeMode.MANUAL);
         } else {
             listenerContainer.setAcknowledgeMode(
-                    config.getAcknowledgeMode() == 2 ? AcknowledgeMode.NONE : AcknowledgeMode.AUTO);
+                    rabbit.getAcknowledgeMode() == 2 ? AcknowledgeMode.NONE : AcknowledgeMode.AUTO);
         }
         listenerContainer.setMessageListener(msgAdapterHandler);
         listenerContainer.setErrorHandler(new MessageErrorHandler());
-        if (config.getPrefetchCount() != null) {
-            listenerContainer.setPrefetchCount(config.getPrefetchCount());
+        if (rabbit.getPrefetchCount() != null) {
+            listenerContainer.setPrefetchCount(rabbit.getPrefetchCount());
         }
-        if (config.getConsumersPerQueue() != null) {
-            listenerContainer.setConsumersPerQueue(config.getConsumersPerQueue());
+        if (rabbit.getConsumersPerQueue() != null) {
+            listenerContainer.setConsumersPerQueue(rabbit.getConsumersPerQueue());
         }
         listenerContainer.setQueues(queues.values().toArray(new Queue[queues.size()]));
         listenerContainer.start();
@@ -107,7 +114,7 @@ public class RabbitmqFactory implements Factory {
                        MessageConverter messageConverter) {
         if (processor != null) {
             msgAdapterHandler.add(exchangeName, routingKey, processor, type, messageConverter);
-            if (config.isListenerEnable()) {
+            if (rabbit.isListenerEnable()) {
                 declareBinding(queueName, exchangeName, routingKey, true,
                         type == null ? SendTypeEnum.DIRECT.toString() : type.toString());
                 if (listenerContainer == null) {
@@ -134,9 +141,9 @@ public class RabbitmqFactory implements Factory {
         Exchange exchange = exchanges.get(exchangeName);
         if (exchange == null) {
             if (SendTypeEnum.TOPIC.toString().equals(type)) {
-                exchange = new TopicExchange(exchangeName, config.isDurable(), config.isAutoDelete(), null);
+                exchange = new TopicExchange(exchangeName, rabbit.isDurable(), rabbit.isAutoDelete(), null);
             } else {
-                exchange = new DirectExchange(exchangeName, config.isDurable(), config.isAutoDelete(), null);
+                exchange = new DirectExchange(exchangeName, rabbit.isDurable(), rabbit.isAutoDelete(), null);
             }
             exchanges.put(exchangeName, exchange);
             rabbitAdmin.declareExchange(exchange);
@@ -144,7 +151,7 @@ public class RabbitmqFactory implements Factory {
         }
         Queue queue = queues.get(queueName);
         if (queue == null) {
-            queue = new Queue(queueName, config.isDurable(), config.isExclusive(), config.isAutoDelete());
+            queue = new Queue(queueName, rabbit.isDurable(), rabbit.isExclusive(), rabbit.isAutoDelete());
             if (isPutQueue) {
                 queues.put(queueName, queue);
             }
@@ -166,8 +173,9 @@ public class RabbitmqFactory implements Factory {
     /**
      * 扩展消息的CorrelationData，方便在回调中应用
      */
-    public void setCorrelationData(String bizId, String coordinator) {
+    public void setCorrelationData(String bizId, String coordinator, EventMessage msg, Integer retry) {
         rabbitTemplate.setCorrelationDataPostProcessor(((message, correlationData) ->
-                new CorrelationDataExt(bizId, coordinator)));
+                new CorrelationDataExt(bizId, coordinator,
+                        retry == null ? config.getDistributed().getMaxRetries() : retry, msg)));
     }
 }

@@ -32,8 +32,8 @@ public class RabbitTopicTest {
         properties.setHost("127.0.0.1");
         properties.setUsername("guest");
         properties.setPassword("guest");
-        RabbitmqProperties mqProperties = new RabbitmqProperties();
-        mqProperties.setListenerEnable(true);
+        MqProperties mqProperties = new MqProperties();
+        mqProperties.getRabbit().setListenerEnable(true);
         RabbitmqFactory factory = RabbitmqFactory.getInstance(mqProperties,
                 new CachingConnectionFactory(Objects.requireNonNull(this.getRabbitConnectionFactoryBean(properties).getObject())));
         this.template = factory.getTemplate();

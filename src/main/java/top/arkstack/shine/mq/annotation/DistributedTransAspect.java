@@ -65,9 +65,10 @@ public class DistributedTransAspect {
         if (data == null) {
             data = MqConstant.DATA_DEFAULT;
         }
-        coordinator.setReady(msgId, new EventMessage(exchange, routeKey, null, data));
+        EventMessage message = new EventMessage(exchange, routeKey, null, data);
+        coordinator.setReady(msgId, message);
         try {
-            rabbitmqFactory.setCorrelationData(msgId, coordinatorName);
+            rabbitmqFactory.setCorrelationData(msgId, coordinatorName, message, null);
             rabbitmqFactory.add(exchange, exchange, routeKey, null, null);
             rabbitmqFactory.getTemplate().send(exchange, data, routeKey);
         } catch (Exception e) {

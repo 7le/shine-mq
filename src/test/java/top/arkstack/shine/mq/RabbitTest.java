@@ -23,7 +23,7 @@ public class RabbitTest {
     @Before
     public void init() throws Exception {
         RabbitProperties properties = new RabbitProperties();
-        RabbitmqProperties mqProperties = new RabbitmqProperties();
+        MqProperties mqProperties = new MqProperties();
         RabbitmqFactory factory = RabbitmqFactory.getInstance(mqProperties,
                 new CachingConnectionFactory(Objects.requireNonNull(getRabbitConnectionFactoryBean(properties).getObject())));
         template = factory.getTemplate();

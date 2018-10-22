@@ -28,14 +28,14 @@ public class MqAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public RabbitmqProperties mqProperties() {
-        return new RabbitmqProperties();
+    public MqProperties mqProperties() {
+        return new MqProperties();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public RabbitmqFactory rabbitmqFactory(RabbitmqProperties mqProperties, CachingConnectionFactory factory) {
-        return RabbitmqFactory.getInstance(mqProperties, factory);
+    public RabbitmqFactory rabbitmqFactory(MqProperties properties, CachingConnectionFactory factory) {
+        return RabbitmqFactory.getInstance(properties, factory);
     }
 
     @Bean
@@ -47,6 +47,9 @@ public class MqAutoConfiguration {
     @Autowired
     ApplicationContext applicationContext;
 
+    @Autowired
+    RabbitmqFactory rabbitmqFactory;
+
     @Bean
     @ConditionalOnProperty(name = "shine.mq.distributed.transaction", havingValue = "true")
     public RabbitTemplate rabbitmqTemplate(RabbitmqFactory rabbitmqFactory) {
@@ -56,15 +59,27 @@ public class MqAutoConfiguration {
             if (correlationData != null) {
                 log.info("ConfirmCallback ack: {} correlationData: {} cause: {}", ack, correlationData, cause);
                 String msgId = correlationData.getId();
+                CorrelationDataExt ext = (CorrelationDataExt) correlationData;
                 //消息能投入正确的消息队列，并持久化，返回的ack为true
                 if (ack) {
                     log.info("The message has been successfully delivered to the queue, correlationData:{}", correlationData);
-                    String name = ((CorrelationDataExt) correlationData).getCoordinator();
-                    Coordinator coordinator = (Coordinator) applicationContext.getBean(name);
+                    Coordinator coordinator = (Coordinator) applicationContext.getBean(ext.getCoordinator());
                     coordinator.delStatus(msgId);
                 } else {
                     log.error("Message delivery failed, bizId: {}, cause: {}", correlationData.getId(), cause);
-                    //TODO retry
+                    //失败了判断重试次数
+                    if (ext.getMaxRetries() > 0) {
+                        try {
+                            rabbitmqFactory.setCorrelationData(msgId, ext.getCoordinator(), ext.getMessage(),
+                                    ext.getMaxRetries() - 1);
+                            rabbitmqFactory.getTemplate().send(ext.getMessage().getExchangeName(), ext.getMessage(),
+                                    ext.getMessage().getRoutingKey());
+                        } catch (Exception e) {
+                            log.error("Message retry failed to send, message:{} exception: ", ext.getMessage(), e);
+                        }
+                    } else {
+                        //TODO 失败需要处理
+                    }
                 }
             }
         });
@@ -77,5 +92,11 @@ public class MqAutoConfiguration {
                     + "exchange: {}, routingKey: {}", messageId, replyCode, replyText, exchange, routingKey);
         });
         return template;
+    }
+
+    public static void main(String[] args) {
+        Integer a = 2;
+
+        System.out.println(a - 1);
     }
 }
