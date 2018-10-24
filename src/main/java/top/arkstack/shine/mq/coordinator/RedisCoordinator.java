@@ -6,6 +6,8 @@ import java.util.List;
 
 /**
  * 提供基于redis实现
+ *
+ * @author 7le
  */
 public class RedisCoordinator implements Coordinator{
 
@@ -21,6 +23,11 @@ public class RedisCoordinator implements Coordinator{
 
     @Override
     public void delStatus(String msgId) {
+
+    }
+
+    @Override
+    public void setRetry(String msgId) {
 
     }
 

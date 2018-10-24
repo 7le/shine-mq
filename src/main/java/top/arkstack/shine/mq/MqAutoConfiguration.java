@@ -60,14 +60,13 @@ public class MqAutoConfiguration {
                 log.info("ConfirmCallback ack: {} correlationData: {} cause: {}", ack, correlationData, cause);
                 String msgId = correlationData.getId();
                 CorrelationDataExt ext = (CorrelationDataExt) correlationData;
+                Coordinator coordinator = (Coordinator) applicationContext.getBean(ext.getCoordinator());
                 //消息能投入正确的消息队列，并持久化，返回的ack为true
                 if (ack) {
                     log.info("The message has been successfully delivered to the queue, correlationData:{}", correlationData);
-                    Coordinator coordinator = (Coordinator) applicationContext.getBean(ext.getCoordinator());
                     coordinator.delStatus(msgId);
                 } else {
-                    log.error("Message delivery failed, bizId: {}, cause: {}", correlationData.getId(), cause);
-                    //失败了判断重试次数
+                    //失败了判断重试次数，重试次数大于0则继续发送
                     if (ext.getMaxRetries() > 0) {
                         try {
                             rabbitmqFactory.setCorrelationData(msgId, ext.getCoordinator(), ext.getMessage(),
@@ -78,7 +77,9 @@ public class MqAutoConfiguration {
                             log.error("Message retry failed to send, message:{} exception: ", ext.getMessage(), e);
                         }
                     } else {
-                        //TODO 失败需要处理
+                        //因为系统A的操作已经执行，回滚代价比较大，则需要有个守护线程捞起失败的消息，重新发送
+                        coordinator.setRetry(msgId);
+                        log.error("Message delivery failed, msgId: {}, cause: {}", msgId, cause);
                     }
                 }
             }
@@ -92,11 +93,5 @@ public class MqAutoConfiguration {
                     + "exchange: {}, routingKey: {}", messageId, replyCode, replyText, exchange, routingKey);
         });
         return template;
-    }
-
-    public static void main(String[] args) {
-        Integer a = 2;
-
-        System.out.println(a - 1);
     }
 }

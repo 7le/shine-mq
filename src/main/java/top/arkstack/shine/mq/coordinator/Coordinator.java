@@ -32,6 +32,13 @@ public interface Coordinator {
     void delStatus(String msgId);
 
     /**
+     * 设置消息为 失败待捞起重试消息
+     *
+     * @param msgId 消息id
+     */
+    void setRetry(String msgId);
+
+    /**
      * 获取消息
      *
      * @param msgId 消息id

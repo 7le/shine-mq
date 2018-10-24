@@ -50,8 +50,6 @@ public class DistributedTransAspect {
             log.error("No coordinator or not joined the spring container : ", e);
             throw e;
         }
-
-        //发送前暂存消息
         coordinator.setPrepare(msgId);
         Object data;
         try {
@@ -66,6 +64,7 @@ public class DistributedTransAspect {
             data = MqConstant.DATA_DEFAULT;
         }
         EventMessage message = new EventMessage(exchange, routeKey, null, data);
+        //将消息持久化
         coordinator.setReady(msgId, message);
         try {
             rabbitmqFactory.setCorrelationData(msgId, coordinatorName, message, null);
