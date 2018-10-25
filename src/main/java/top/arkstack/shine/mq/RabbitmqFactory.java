@@ -176,6 +176,6 @@ public class RabbitmqFactory implements Factory {
     public void setCorrelationData(String bizId, String coordinator, EventMessage msg, Integer retry) {
         rabbitTemplate.setCorrelationDataPostProcessor(((message, correlationData) ->
                 new CorrelationDataExt(bizId, coordinator,
-                        retry == null ? config.getDistributed().getMaxRetries() : retry, msg)));
+                        retry == null ? config.getDistributed().getCommitMaxRetries() : retry, msg)));
     }
 }

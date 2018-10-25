@@ -28,7 +28,12 @@ public class MqProperties {
         /**
          * 提交ack 失败最大重试次数
          */
-        private Integer maxRetries = 3;
+        private Integer commitMaxRetries = 3;
+
+        /**
+         * 接收消息 ack 失败最大尝试次数
+         */
+        private Integer receiveMaxRetries = 3;
     }
 
     @Data

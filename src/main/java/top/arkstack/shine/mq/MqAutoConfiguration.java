@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import top.arkstack.shine.mq.annotation.DistributedTransAspect;
 import top.arkstack.shine.mq.coordinator.Coordinator;
-import top.arkstack.shine.mq.coordinator.RedisCoordinator;
+import top.arkstack.shine.mq.coordinator.redis.RedisCoordinator;
 
 /**
  * @author 7le
