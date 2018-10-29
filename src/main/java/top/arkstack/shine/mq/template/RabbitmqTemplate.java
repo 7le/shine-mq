@@ -11,6 +11,7 @@ import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.bean.SendTypeEnum;
 
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * 封装AMQP的一些操作
@@ -93,6 +94,7 @@ public class RabbitmqTemplate implements Template {
         if (priority > 0) {
             messageProperties.setPriority(priority);
         }
+        messageProperties.setMessageId(UUID.randomUUID().toString());
         Message message = messageConverter.toMessage(eventMessage, messageProperties);
         try {
             if (SendTypeEnum.RPC.equals(type)) {
@@ -123,6 +125,7 @@ public class RabbitmqTemplate implements Template {
         if (priority > 0) {
             messageProperties.setPriority(priority);
         }
+        messageProperties.setMessageId(UUID.randomUUID().toString());
         Message message = messageConverter.toMessage(msg, messageProperties);
         try {
             if (SendTypeEnum.RPC.equals(type)) {

@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 消息队列的基础配置信息
  *
  * @author 7le
- * @version 1.1.0
+ * @version 2.0.0
  */
 @Data
 @ConfigurationProperties("shine.mq")

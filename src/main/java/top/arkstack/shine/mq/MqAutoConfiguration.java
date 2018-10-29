@@ -47,12 +47,12 @@ public class MqAutoConfiguration {
     @Autowired
     ApplicationContext applicationContext;
 
-    @Autowired
-    RabbitmqFactory rabbitmqFactory;
-
     @Bean
     @ConditionalOnProperty(name = "shine.mq.distributed.transaction", havingValue = "true")
     public RabbitTemplate rabbitmqTemplate(RabbitmqFactory rabbitmqFactory) {
+        if (rabbitmqFactory.getRabbit().getAcknowledgeMode() != 1) {
+            throw new IllegalArgumentException("Distributed transactions must use MANUAL(AcknowledgeMode=1) mode!");
+        }
         RabbitTemplate template = rabbitmqFactory.getRabbitTemplate();
         //消息发送到RabbitMQ交换器后接收ack回调
         template.setConfirmCallback((correlationData, ack, cause) -> {

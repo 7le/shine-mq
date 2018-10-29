@@ -8,7 +8,7 @@ import top.arkstack.shine.mq.bean.EventMessage;
  * 扩展 CorrelationData
  *
  * @author heqian7
- * @version 1.1.0
+ * @version 2.0.0
  */
 @Data
 public class CorrelationDataExt extends CorrelationData {

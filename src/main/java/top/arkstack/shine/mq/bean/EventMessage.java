@@ -11,7 +11,6 @@ import java.io.Serializable;
  * @version 1.0.0
  */
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
 public class EventMessage implements Serializable {
 
@@ -24,4 +23,13 @@ public class EventMessage implements Serializable {
     private String sendTypeEnum;
 
     private Object data;
+
+    private String coordinator;
+
+    public EventMessage(String exchangeName, String routingKey, String sendTypeEnum, Object data) {
+        this.exchangeName = exchangeName;
+        this.routingKey = routingKey;
+        this.sendTypeEnum = sendTypeEnum;
+        this.data = data;
+    }
 }

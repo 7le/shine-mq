@@ -8,10 +8,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.ChannelAwareMessageListener;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.bean.SendTypeEnum;
+import top.arkstack.shine.mq.constant.MqConstant;
+import top.arkstack.shine.mq.coordinator.Coordinator;
 import top.arkstack.shine.mq.processor.Processor;
 
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +34,12 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
     private static final Logger logger = LoggerFactory.getLogger(MessageAdapterHandler.class);
 
     private ConcurrentMap<String, ProcessorWrap> map;
+
+    @Autowired
+    ApplicationContext applicationContext;
+
+    @Autowired
+    RabbitmqFactory rabbitmqFactory;
 
     protected MessageAdapterHandler() {
         this.map = new ConcurrentHashMap<>();
@@ -52,13 +63,38 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
     @Override
     public void onMessage(Message message, Channel channel) {
         EventMessage em;
+        String msgId = message.getMessageProperties().getMessageId();
+        long tag = message.getMessageProperties().getDeliveryTag();
         try {
             em = JSON.parseObject(message.getBody(), EventMessage.class);
             ProcessorWrap wrap = map.get(em.getExchangeName() + "_" + em.getRoutingKey() + "_" + em.getSendTypeEnum());
             wrap.process(em.getData(), message, channel);
+            Coordinator coordinator;
+            if (em.getCoordinator() != null) {
+                coordinator = (Coordinator) applicationContext.getBean(em.getCoordinator());
+            } else {
+                throw new IllegalArgumentException("Distributed transaction message error, coordinator is null");
+            }
+            try {
+                //如果是分布式事务的消息，sdk提供ack应答，无须自己手动ack
+                if (SendTypeEnum.DISTRIBUTED.toString().equals(em.getSendTypeEnum())) {
+                    channel.basicAck(tag, false);
+                }
+            } catch (IOException e) {
+                log.error("Consume message failed , message: {} :", message.getBody(), e);
+                if (SendTypeEnum.DISTRIBUTED.toString().equals(em.getSendTypeEnum())) {
+                    Long resendCount = coordinator.incrementResendKey(MqConstant.RECEIVE_RETRIES, msgId);
+                    if (resendCount >= rabbitmqFactory.getConfig().getDistributed().getReceiveMaxRetries()) {
+                        // 放入死信队列
+                        channel.basicNack(tag, false, false);
+                    } else {
+                        // 重新放入队列 等待消费
+                        channel.basicNack(tag, false, true);
+                    }
+                }
+            }
         } catch (Exception e) {
-            //TODO 后续可以提供回调，供使用者自定义
-            log.error("MessageAdapterHandler {} error :", message.getBody(), e);
+            log.error("MessageAdapterHandler error, message: {} :", message.getBody(), e);
         }
     }
 
