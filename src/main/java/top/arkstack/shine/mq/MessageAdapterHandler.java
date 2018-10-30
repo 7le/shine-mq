@@ -69,15 +69,13 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
             em = JSON.parseObject(message.getBody(), EventMessage.class);
             ProcessorWrap wrap = map.get(em.getExchangeName() + "_" + em.getRoutingKey() + "_" + em.getSendTypeEnum());
             wrap.process(em.getData(), message, channel);
-            Coordinator coordinator;
-            if (em.getCoordinator() != null) {
-                coordinator = (Coordinator) applicationContext.getBean(em.getCoordinator());
-            } else {
-                throw new IllegalArgumentException("Distributed transaction message error, coordinator is null");
-            }
+            Coordinator coordinator = null;
             try {
                 //如果是分布式事务的消息，sdk提供ack应答，无须自己手动ack
                 if (SendTypeEnum.DISTRIBUTED.toString().equals(em.getSendTypeEnum())) {
+                    Objects.requireNonNull(em.getCoordinator(),
+                            "Distributed transaction message error: coordinator is null.");
+                    coordinator = (Coordinator) applicationContext.getBean(em.getCoordinator());
                     channel.basicAck(tag, false);
                 }
             } catch (IOException e) {

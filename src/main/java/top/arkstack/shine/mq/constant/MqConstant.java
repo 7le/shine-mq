@@ -23,4 +23,10 @@ public class MqConstant {
     public static final String DATA_DEFAULT = "";
 
     public static final String RECEIVE_RETRIES = "receive_retries";
+
+    public static final String DEAD_LETTER_QUEUE = "dead_letter_queue";
+
+    public static final String DEAD_LETTER_EXCHANGE = "dead_letter_exchange";
+
+    public static final String DEAD_LETTER_ROUTEKEY = "dead_letter_routekey";
 }

@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import top.arkstack.shine.mq.RabbitmqFactory;
+import top.arkstack.shine.mq.ShineMqException;
 import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.coordinator.Coordinator;
@@ -34,9 +35,15 @@ public class DistributedTransAspect {
     @Autowired
     RabbitmqFactory rabbitmqFactory;
 
+    volatile boolean flag = true;
+
 
     @Around(value = "@annotation(trans)")
     public void around(ProceedingJoinPoint pjp, DistributedTrans trans) throws Throwable {
+        if(!rabbitmqFactory.getConfig().getDistributed().isTransaction()){
+            throw new ShineMqException("Use distributed transaction, the transaction parameter must be true.");
+        }
+
         log.info("Start distributed transaction : {} ", trans);
         String exchange = trans.exchange();
         String routeKey = trans.routeKey();
@@ -68,7 +75,12 @@ public class DistributedTransAspect {
         coordinator.setReady(msgId, message);
         try {
             rabbitmqFactory.setCorrelationData(msgId, coordinatorName, message, null);
-            rabbitmqFactory.add(exchange, exchange, routeKey, null, null);
+            rabbitmqFactory.addDLX(exchange, exchange, routeKey, null, null);
+            if (flag) {
+                rabbitmqFactory.add(MqConstant.DEAD_LETTER_QUEUE, MqConstant.DEAD_LETTER_EXCHANGE,
+                        MqConstant.DEAD_LETTER_ROUTEKEY, null, null);
+                flag = false;
+            }
             rabbitmqFactory.getTemplate().send(exchange, data, routeKey);
         } catch (Exception e) {
             log.error("Message failed to be sent : ", e);

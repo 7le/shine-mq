@@ -11,6 +11,7 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.bean.SendTypeEnum;
+import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.processor.Processor;
 import top.arkstack.shine.mq.template.RabbitmqTemplate;
 import top.arkstack.shine.mq.template.Template;
@@ -116,23 +117,54 @@ public class RabbitmqFactory implements Factory {
             msgAdapterHandler.add(exchangeName, routingKey, processor, type, messageConverter);
             if (rabbit.isListenerEnable()) {
                 declareBinding(queueName, exchangeName, routingKey, true,
-                        type == null ? SendTypeEnum.DIRECT.toString() : type.toString());
+                        type == null ? SendTypeEnum.DIRECT.toString() : type.toString(), false);
                 if (listenerContainer == null) {
                     initMsgListenerAdapter();
                 } else {
                     listenerContainer.addQueueNames(queueName);
                 }
+            } else {
+                declareBinding(queueName, exchangeName, routingKey, false,
+                        type == null ? SendTypeEnum.DIRECT.toString() : type.toString(), false);
             }
             return this;
         } else {
             declareBinding(queueName, exchangeName, routingKey, false,
-                    type == null ? SendTypeEnum.DIRECT.toString() : type.toString());
+                    type == null ? SendTypeEnum.DIRECT.toString() : type.toString(), false);
+            return this;
+        }
+    }
+
+    public Factory addDLX(String queueName, String exchangeName, String routingKey, Processor processor, SendTypeEnum type) {
+        return addDLX(queueName, exchangeName, routingKey, processor, type, serializerMessageConverter);
+    }
+
+    public Factory addDLX(String queueName, String exchangeName, String routingKey, Processor processor, SendTypeEnum type,
+                          MessageConverter messageConverter) {
+        if (processor != null) {
+            msgAdapterHandler.add(exchangeName, routingKey, processor, type, messageConverter);
+            if (rabbit.isListenerEnable()) {
+                declareBinding(queueName, exchangeName, routingKey, true,
+                        type == null ? SendTypeEnum.DIRECT.toString() : type.toString(), true);
+                if (listenerContainer == null) {
+                    initMsgListenerAdapter();
+                } else {
+                    listenerContainer.addQueueNames(queueName);
+                }
+            } else {
+                declareBinding(queueName, exchangeName, routingKey, false,
+                        type == null ? SendTypeEnum.DIRECT.toString() : type.toString(), true);
+            }
+            return this;
+        } else {
+            declareBinding(queueName, exchangeName, routingKey, false,
+                    type == null ? SendTypeEnum.DIRECT.toString() : type.toString(), true);
             return this;
         }
     }
 
     private synchronized void declareBinding(String queueName, String exchangeName, String routingKey,
-                                             boolean isPutQueue, String type) {
+                                             boolean isPutQueue, String type, boolean isDlx) {
         String bindRelation = queueName + "_" + exchangeName + "_" + routingKey + "_" + type;
         if (bind.contains(bindRelation)) {
             return;
@@ -151,7 +183,14 @@ public class RabbitmqFactory implements Factory {
         }
         Queue queue = queues.get(queueName);
         if (queue == null) {
-            queue = new Queue(queueName, rabbit.isDurable(), rabbit.isExclusive(), rabbit.isAutoDelete());
+            if (isDlx) {
+                Map<String, Object> args = new HashMap<>(2);
+                args.put("x-dead-letter-exchange", MqConstant.DEAD_LETTER_EXCHANGE);
+                args.put("x-dead-letter-routing-key", MqConstant.DEAD_LETTER_ROUTEKEY);
+                queue = new Queue(queueName, rabbit.isDurable(), rabbit.isExclusive(), rabbit.isAutoDelete(), args);
+            } else {
+                queue = new Queue(queueName, rabbit.isDurable(), rabbit.isExclusive(), rabbit.isAutoDelete());
+            }
             if (isPutQueue) {
                 queues.put(queueName, queue);
             }

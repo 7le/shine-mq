@@ -1,6 +1,7 @@
-package top.arkstack.shine.mq.coordinator;
+package top.arkstack.shine.mq.coordinator.redis;
 
 import top.arkstack.shine.mq.bean.EventMessage;
+import top.arkstack.shine.mq.coordinator.Coordinator;
 
 import java.util.List;
 
@@ -9,7 +10,7 @@ import java.util.List;
  *
  * @author 7le
  */
-public class RedisCoordinator implements Coordinator{
+public class RedisCoordinator implements Coordinator {
 
     @Override
     public void setPrepare(String msgId) {
