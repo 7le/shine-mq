@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import top.arkstack.shine.mq.RabbitmqFactory;
 import top.arkstack.shine.mq.ShineMqException;
 import top.arkstack.shine.mq.bean.EventMessage;
+import top.arkstack.shine.mq.bean.SendTypeEnum;
 import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.coordinator.Coordinator;
 
@@ -40,7 +41,7 @@ public class DistributedTransAspect {
 
     @Around(value = "@annotation(trans)")
     public void around(ProceedingJoinPoint pjp, DistributedTrans trans) throws Throwable {
-        if(!rabbitmqFactory.getConfig().getDistributed().isTransaction()){
+        if (!rabbitmqFactory.getConfig().getDistributed().isTransaction()) {
             throw new ShineMqException("Use distributed transaction, the transaction parameter must be true.");
         }
 
@@ -70,7 +71,7 @@ public class DistributedTransAspect {
         if (data == null) {
             data = MqConstant.DATA_DEFAULT;
         }
-        EventMessage message = new EventMessage(exchange, routeKey, null, data, coordinatorName);
+        EventMessage message = new EventMessage(exchange, routeKey, SendTypeEnum.DISTRIBUTED.toString(), data, coordinatorName);
         //将消息持久化
         coordinator.setReady(msgId, message);
         try {
@@ -81,7 +82,7 @@ public class DistributedTransAspect {
                         MqConstant.DEAD_LETTER_ROUTEKEY, null, null);
                 flag = false;
             }
-            rabbitmqFactory.getTemplate().send(exchange, data, routeKey);
+            rabbitmqFactory.getTemplate().send(message, 0, 0, SendTypeEnum.DISTRIBUTED);
         } catch (Exception e) {
             log.error("Message failed to be sent : ", e);
             //消息未发出 清理之前暂存的消息状态

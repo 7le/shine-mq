@@ -9,6 +9,7 @@ import java.util.List;
  * 提供基于redis实现
  *
  * @author 7le
+ * @version 2.0.0
  */
 public class RedisCoordinator implements Coordinator {
 
@@ -55,5 +56,10 @@ public class RedisCoordinator implements Coordinator {
     @Override
     public Long getResendValue(String key, String hashKey) {
         return null;
+    }
+
+    @Override
+    public void delResendKey(String key, String hashKey) {
+
     }
 }

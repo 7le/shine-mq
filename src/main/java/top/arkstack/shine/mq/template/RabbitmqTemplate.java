@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.support.converter.MessageConverter;
 import top.arkstack.shine.mq.bean.EventMessage;
@@ -55,6 +56,11 @@ public class RabbitmqTemplate implements Template {
     }
 
     @Override
+    public void send(EventMessage message, int expiration, int priority, SendTypeEnum type) throws Exception {
+        this.sendWithEM(message, expiration, priority, type);
+    }
+
+    @Override
     public void sendSimple(String exchangeName, Object msg, String routingKey) throws Exception {
         this.sendSimple(exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, 0, 0);
     }
@@ -95,12 +101,43 @@ public class RabbitmqTemplate implements Template {
             messageProperties.setPriority(priority);
         }
         messageProperties.setMessageId(UUID.randomUUID().toString());
+        // 设置消息持久化
+        messageProperties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
         Message message = messageConverter.toMessage(eventMessage, messageProperties);
         try {
             if (SendTypeEnum.RPC.equals(type)) {
                 obj = eventAmqpTemplate.convertSendAndReceive(routingKey, message);
             } else {
                 eventAmqpTemplate.send(exchangeName, routingKey, message);
+            }
+        } catch (AmqpException e) {
+            logger.error("send event fail. Event Message : [{}]", eventMessage, e);
+            throw new Exception("send event fail", e);
+        }
+        return obj;
+    }
+
+    private Object sendWithEM(EventMessage eventMessage, int expiration, int priority, SendTypeEnum type) throws Exception {
+
+        Object obj = null;
+        MessageProperties messageProperties = new MessageProperties();
+        //过期时间
+        if (expiration > 0) {
+            messageProperties.setExpiration(String.valueOf(expiration));
+        }
+        //消息优先级
+        if (priority > 0) {
+            messageProperties.setPriority(priority);
+        }
+        messageProperties.setMessageId(UUID.randomUUID().toString());
+        // 设置消息持久化
+        messageProperties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+        Message message = messageConverter.toMessage(eventMessage, messageProperties);
+        try {
+            if (SendTypeEnum.RPC.equals(type)) {
+                obj = eventAmqpTemplate.convertSendAndReceive(eventMessage.getRoutingKey(), message);
+            } else {
+                eventAmqpTemplate.send(eventMessage.getExchangeName(), eventMessage.getRoutingKey(), message);
             }
         } catch (AmqpException e) {
             logger.error("send event fail. Event Message : [{}]", eventMessage, e);
@@ -126,6 +163,8 @@ public class RabbitmqTemplate implements Template {
             messageProperties.setPriority(priority);
         }
         messageProperties.setMessageId(UUID.randomUUID().toString());
+        // 设置消息持久化
+        messageProperties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
         Message message = messageConverter.toMessage(msg, messageProperties);
         try {
             if (SendTypeEnum.RPC.equals(type)) {

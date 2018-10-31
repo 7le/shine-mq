@@ -65,7 +65,7 @@ public interface Coordinator {
     /**
      * 消息重发次数+1
      *
-     * @param key 消息id
+     * @param key 重发消息key
      * @param hashKey 消息id
      * @return 消息重发次数
      */
@@ -79,5 +79,13 @@ public interface Coordinator {
      * @return 消息重发次数
      */
     Long getResendValue(String key, String hashKey);
+
+    /**
+     * 删除重发消息的值
+     *
+     * @param key 重发消息key
+     * @param hashKey 消息id
+     */
+    void delResendKey(String key,String hashKey);
 
 }

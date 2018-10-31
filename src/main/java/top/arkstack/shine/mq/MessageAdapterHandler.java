@@ -10,6 +10,7 @@ import org.springframework.amqp.rabbit.core.ChannelAwareMessageListener;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
 import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.bean.SendTypeEnum;
 import top.arkstack.shine.mq.constant.MqConstant;
@@ -29,6 +30,7 @@ import java.util.concurrent.ConcurrentMap;
  * @version 1.0.0
  */
 @Slf4j
+@Component
 public class MessageAdapterHandler implements ChannelAwareMessageListener {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageAdapterHandler.class);
@@ -85,6 +87,7 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
                     if (resendCount >= rabbitmqFactory.getConfig().getDistributed().getReceiveMaxRetries()) {
                         // 放入死信队列
                         channel.basicNack(tag, false, false);
+                        coordinator.delResendKey(MqConstant.RECEIVE_RETRIES, msgId);
                     } else {
                         // 重新放入队列 等待消费
                         channel.basicNack(tag, false, true);
