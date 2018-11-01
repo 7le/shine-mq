@@ -7,7 +7,7 @@ import top.arkstack.shine.mq.bean.EventMessage;
 /**
  * 扩展 CorrelationData
  *
- * @author heqian7
+ * @author 7le
  * @version 2.0.0
  */
 @Data

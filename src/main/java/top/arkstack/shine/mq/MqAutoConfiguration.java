@@ -23,7 +23,7 @@ import top.arkstack.shine.mq.coordinator.redis.RedisCoordinator;
 @Slf4j
 @Configuration
 @EnableConfigurationProperties
-@Import({RabbitAutoConfiguration.class, DistributedTransAspect.class})
+@Import({RabbitAutoConfiguration.class, DistributedTransAspect.class, MessageAdapterHandler.class})
 public class MqAutoConfiguration {
 
     @Bean

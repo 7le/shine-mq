@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.DirectMessageListenerContainer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Autowired;
 import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.bean.SendTypeEnum;
 import top.arkstack.shine.mq.constant.MqConstant;
@@ -28,6 +29,9 @@ import java.util.*;
 @Data
 public class RabbitmqFactory implements Factory {
 
+    @Autowired
+    MessageAdapterHandler msgAdapterHandler;
+
     private static RabbitmqFactory rabbitmqFactory;
 
     private MqProperties config;
@@ -41,8 +45,6 @@ public class RabbitmqFactory implements Factory {
     protected RabbitTemplate rabbitTemplate;
 
     private Template template;
-
-    private MessageAdapterHandler msgAdapterHandler = new MessageAdapterHandler();
 
     private DirectMessageListenerContainer listenerContainer;
 
