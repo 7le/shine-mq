@@ -34,6 +34,13 @@ public class MqProperties {
          * 接收消息 ack 失败最大尝试次数
          */
         private Integer receiveMaxRetries = 3;
+
+        /**
+         * 默认提供redis中间件来实现消息提交到mq之前的持久化
+         *
+         * 也可以自己实现 {@link top.arkstack.shine.mq.coordinator.Coordinator}
+         */
+        private boolean redisPersistence = true;
     }
 
     @Data

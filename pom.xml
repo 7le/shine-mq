@@ -29,6 +29,7 @@
         <spring.boot>2.0.3.RELEASE</spring.boot>
         <aspectj.version>1.8.13</aspectj.version>
         <jackson.version>2.9.7</jackson.version>
+        <redis.version>1.4.7.RELEASE</redis.version>
     </properties>
 
     <dependencies>
@@ -119,6 +120,12 @@
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjrt</artifactId>
             <version>${aspectj.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-redis</artifactId>
+            <version>${redis.version}</version>
         </dependency>
 
     </dependencies>

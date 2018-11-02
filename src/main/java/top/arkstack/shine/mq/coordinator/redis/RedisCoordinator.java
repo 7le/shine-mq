@@ -1,5 +1,6 @@
 package top.arkstack.shine.mq.coordinator.redis;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.coordinator.Coordinator;
 
@@ -12,6 +13,9 @@ import java.util.List;
  * @version 2.0.0
  */
 public class RedisCoordinator implements Coordinator {
+
+    @Autowired
+    private RedisUtil redisUtil;
 
     @Override
     public void setPrepare(String msgId) {

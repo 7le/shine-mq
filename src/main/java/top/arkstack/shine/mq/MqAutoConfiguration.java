@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Import;
 import top.arkstack.shine.mq.annotation.DistributedTransAspect;
 import top.arkstack.shine.mq.coordinator.Coordinator;
 import top.arkstack.shine.mq.coordinator.redis.RedisCoordinator;
+import top.arkstack.shine.mq.coordinator.redis.RedisUtil;
 
 /**
  * @author 7le
@@ -38,10 +39,23 @@ public class MqAutoConfiguration {
         return RabbitmqFactory.getInstance(properties, factory);
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    public RedisCoordinator redisCoordinator() {
-        return new RedisCoordinator();
+    @Configuration
+    @ConditionalOnProperty(name = "shine.mq.distributed.redis-persistence", havingValue = "true")
+    public class RedisConfiguration{
+
+        @Bean
+        @ConditionalOnProperty(name = "shine.mq.distributed.redis-persistence",
+                havingValue = "true", matchIfMissing = true)
+        public RedisCoordinator redisCoordinator() {
+            return new RedisCoordinator();
+        }
+
+        @Bean
+        @ConditionalOnProperty(name = "shine.mq.distributed.redis-persistence",
+                havingValue = "true", matchIfMissing = true)
+        public RedisUtil redisUtil() {
+            return new RedisUtil();
+        }
     }
 
     @Autowired
