@@ -40,8 +40,8 @@ public class MqAutoConfiguration {
     }
 
     @Configuration
-    @ConditionalOnProperty(name = "shine.mq.distributed.redis-persistence", havingValue = "true")
-    public class RedisConfiguration{
+    @ConditionalOnProperty(name = "shine.mq.distributed.transaction", havingValue = "true")
+    public class RedisConfiguration {
 
         @Bean
         @ConditionalOnProperty(name = "shine.mq.distributed.redis-persistence",
@@ -78,7 +78,6 @@ public class MqAutoConfiguration {
                 //消息能投入正确的消息队列，并持久化，返回的ack为true
                 if (ack) {
                     log.info("The message has been successfully delivered to the queue, correlationData:{}", correlationData);
-                    coordinator.delStatus(msgId);
                 } else {
                     //失败了判断重试次数，重试次数大于0则继续发送
                     if (ext.getMaxRetries() > 0) {
@@ -92,7 +91,7 @@ public class MqAutoConfiguration {
                         }
                     } else {
                         //因为系统A的操作已经执行，回滚代价比较大，则需要有个守护线程捞起失败的消息，重新发送
-                        coordinator.setRetry(msgId);
+                        coordinator.setRetry(msgId, ext.getMessage());
                         log.error("Message delivery failed, msgId: {}, cause: {}", msgId, cause);
                     }
                 }

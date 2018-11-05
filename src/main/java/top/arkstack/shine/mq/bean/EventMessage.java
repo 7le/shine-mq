@@ -26,4 +26,6 @@ public class EventMessage implements Serializable {
     private Object data;
 
     private String coordinator;
+
+    private String messageId;
 }

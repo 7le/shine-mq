@@ -20,6 +20,8 @@ public class MqConstant {
 
     public static final String TIME = "yyyy-MM-dd HH:mm:ss";
 
+    public static final long TIME_OUT = 3000;
+
     public static final String DATA_DEFAULT = "";
 
     public static final String RECEIVE_RETRIES = "receive_retries";
@@ -29,4 +31,10 @@ public class MqConstant {
     public static final String DEAD_LETTER_EXCHANGE = "dead_letter_exchange";
 
     public static final String DEAD_LETTER_ROUTEKEY = "dead_letter_routekey";
+
+    public static final String DISTRIBUTED_MSG_READY = "distributed_msg_ready";
+
+    public static final String DISTRIBUTED_MSG_PREPARE = "distributed_msg_prepare";
+
+    public static final String DISTRIBUTED_MSG_RETRY = "distributed_msg_retry";
 }

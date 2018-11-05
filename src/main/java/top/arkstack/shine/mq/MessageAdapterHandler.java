@@ -83,7 +83,7 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
             } catch (IOException e) {
                 log.error("Consume message failed , message: {} :", message.getBody(), e);
                 if (SendTypeEnum.DISTRIBUTED.toString().equals(em.getSendTypeEnum())) {
-                    Long resendCount = coordinator.incrementResendKey(MqConstant.RECEIVE_RETRIES, msgId);
+                    Double resendCount = coordinator.incrementResendKey(MqConstant.RECEIVE_RETRIES, msgId);
                     if (resendCount >= rabbitmqFactory.getConfig().getDistributed().getReceiveMaxRetries()) {
                         // 放入死信队列
                         channel.basicNack(tag, false, false);

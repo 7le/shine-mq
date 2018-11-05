@@ -64,14 +64,13 @@ public class DistributedTransAspect {
             data = pjp.proceed();
         } catch (Exception e) {
             log.error("Biz execution failed, id : {} :", msgId, e);
-            //消息未发出 清理之前暂存的消息状态
-            coordinator.delStatus(msgId);
             throw e;
         }
         if (data == null) {
             data = MqConstant.DATA_DEFAULT;
         }
-        EventMessage message = new EventMessage(exchange, routeKey, SendTypeEnum.DISTRIBUTED.toString(), data, coordinatorName);
+        EventMessage message = new EventMessage(exchange, routeKey, SendTypeEnum.DISTRIBUTED.toString(), data,
+                coordinatorName, msgId);
         //将消息持久化
         coordinator.setReady(msgId, message);
         try {
@@ -85,8 +84,6 @@ public class DistributedTransAspect {
             rabbitmqFactory.getTemplate().send(message, 0, 0, SendTypeEnum.DISTRIBUTED);
         } catch (Exception e) {
             log.error("Message failed to be sent : ", e);
-            //消息未发出 清理之前暂存的消息状态
-            coordinator.delStatus(msgId);
             throw e;
         }
 

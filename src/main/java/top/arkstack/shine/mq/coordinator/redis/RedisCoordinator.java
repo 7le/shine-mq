@@ -2,9 +2,13 @@ package top.arkstack.shine.mq.coordinator.redis;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import top.arkstack.shine.mq.bean.EventMessage;
+import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.coordinator.Coordinator;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 提供基于redis实现
@@ -19,51 +23,78 @@ public class RedisCoordinator implements Coordinator {
 
     @Override
     public void setPrepare(String msgId) {
-
+        redisUtil.sset(MqConstant.DISTRIBUTED_MSG_READY, msgId);
     }
 
     @Override
     public void setReady(String msgId, EventMessage message) {
-
+        redisUtil.hset(MqConstant.DISTRIBUTED_MSG_PREPARE, msgId, message);
+        redisUtil.sdel(MqConstant.DISTRIBUTED_MSG_READY, msgId);
     }
 
     @Override
-    public void delStatus(String msgId) {
-
-    }
-
-    @Override
-    public void setRetry(String msgId) {
-
+    public void setRetry(String msgId, EventMessage message) {
+        redisUtil.hset(MqConstant.DISTRIBUTED_MSG_RETRY, msgId, message);
     }
 
     @Override
     public EventMessage getMetaMsg(String msgId) {
-        return null;
+        return (EventMessage) redisUtil.hget(MqConstant.DISTRIBUTED_MSG_PREPARE, msgId);
     }
 
-    @Override
-    public List getReady() throws Exception {
-        return null;
-    }
 
     @Override
     public List getPrepare() throws Exception {
-        return null;
+        Set<Object> messageIds = redisUtil.sget(MqConstant.DISTRIBUTED_MSG_PREPARE);
+        List<String> messageAlert = new ArrayList();
+        for (Object messageId : messageIds) {
+            if (msgTimeOut(messageId.toString())) {
+                messageAlert.add(messageId.toString());
+            }
+        }
+        redisUtil.sdel(MqConstant.DISTRIBUTED_MSG_PREPARE, messageAlert);
+        return messageAlert;
+    }
+
+
+    @Override
+    public List getReady() throws Exception {
+        List<Object> messages = redisUtil.hvalues(MqConstant.DISTRIBUTED_MSG_READY);
+        List<EventMessage> messageAlert = new ArrayList();
+        List<String> messageIds = new ArrayList<>();
+        for (Object o : messages) {
+            EventMessage m = (EventMessage) o;
+            if (msgTimeOut(m.getMessageId())) {
+                messageAlert.add(m);
+                messageIds.add(m.getMessageId());
+            }
+        }
+        redisUtil.sdel(MqConstant.DISTRIBUTED_MSG_READY, messageIds);
+        return messageAlert;
     }
 
     @Override
-    public Long incrementResendKey(String key, String hashKey) {
-        return null;
+    public Double incrementResendKey(String key, String hashKey) {
+        return redisUtil.hincr(key, hashKey, 1);
     }
 
     @Override
-    public Long getResendValue(String key, String hashKey) {
-        return null;
+    public Double getResendValue(String key, String hashKey) {
+        return (Double) redisUtil.hget(key, hashKey);
     }
 
     @Override
     public void delResendKey(String key, String hashKey) {
+        redisUtil.del(key, hashKey);
+    }
 
+    private boolean msgTimeOut(String messageId) throws Exception {
+        String messageTime = (messageId.split(MqConstant.SPLIT))[1];
+        long timeGap = System.currentTimeMillis() -
+                new SimpleDateFormat(MqConstant.TIME).parse(messageTime).getTime();
+        if (timeGap > MqConstant.TIME_OUT) {
+            return true;
+        }
+        return false;
     }
 }

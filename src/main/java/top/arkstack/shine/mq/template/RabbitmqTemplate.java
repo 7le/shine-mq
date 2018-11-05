@@ -90,7 +90,7 @@ public class RabbitmqTemplate implements Template {
         Objects.requireNonNull(messageConverter, "The messageConverter is empty.");
 
         Object obj = null;
-        EventMessage eventMessage = new EventMessage(exchangeName, routingKey, type.toString(), msg, null);
+        EventMessage eventMessage = new EventMessage(exchangeName, routingKey, type.toString(), msg, null, null);
         MessageProperties messageProperties = new MessageProperties();
         //过期时间
         if (expiration > 0) {

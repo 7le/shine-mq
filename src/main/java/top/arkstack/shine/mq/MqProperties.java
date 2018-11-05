@@ -39,6 +39,7 @@ public class MqProperties {
          * 默认提供redis中间件来实现消息提交到mq之前的持久化
          *
          * 也可以自己实现 {@link top.arkstack.shine.mq.coordinator.Coordinator}
+         * 或者不想用redis，可以设置为false，就不会有redis的依赖
          */
         private boolean redisPersistence = true;
     }
