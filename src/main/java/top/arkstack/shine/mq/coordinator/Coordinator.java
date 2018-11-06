@@ -26,12 +26,11 @@ public interface Coordinator {
     void setReady(String msgId, EventMessage message);
 
     /**
-     * 设置消息为 失败待捞起重试消息
+     * 删除状态（ready状态）
      *
      * @param msgId 消息id
-     * @param message 消息
      */
-    void setRetry(String msgId, EventMessage message);
+    void delStatus(String msgId);
 
     /**
      * 获取消息

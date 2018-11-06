@@ -15,8 +15,12 @@ import top.arkstack.shine.mq.bean.SendTypeEnum;
 import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.coordinator.Coordinator;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Enumeration;
 
 /**
  * 分布式事务 {@link top.arkstack.shine.mq.annotation.DistributedTrans} 切面
@@ -49,7 +53,8 @@ public class DistributedTransAspect {
         String exchange = trans.exchange();
         String routeKey = trans.routeKey();
         String coordinatorName = trans.coordinator();
-        String msgId = trans.bizId() + MqConstant.SPLIT + getTime();
+        // 防止多节点下同一事务 同一时间点下，msgId重复 增加时间戳和本机本地ip
+        String msgId = trans.bizId() + MqConstant.SPLIT + System.currentTimeMillis() + MqConstant.SPLIT + getIpAddress();
 
         Coordinator coordinator;
         try {
@@ -84,13 +89,34 @@ public class DistributedTransAspect {
             rabbitmqFactory.getTemplate().send(message, 0, 0, SendTypeEnum.DISTRIBUTED);
         } catch (Exception e) {
             log.error("Message failed to be sent : ", e);
+            //消息未发出 清理之前暂存的消息状态
+            coordinator.delStatus(msgId);
             throw e;
         }
 
     }
 
-    private static String getTime() {
-        SimpleDateFormat df = new SimpleDateFormat(MqConstant.TIME);
-        return df.format(new Date());
+    private static String getIpAddress() {
+        try {
+            Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces();
+            InetAddress ip = null;
+            while (allNetInterfaces.hasMoreElements()) {
+                NetworkInterface netInterface = (NetworkInterface) allNetInterfaces.nextElement();
+                if (netInterface.isLoopback() || netInterface.isVirtual() || !netInterface.isUp()) {
+                    continue;
+                } else {
+                    Enumeration<InetAddress> addresses = netInterface.getInetAddresses();
+                    while (addresses.hasMoreElements()) {
+                        ip = addresses.nextElement();
+                        if (ip != null && ip instanceof Inet4Address) {
+                            return ip.getHostAddress();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 }

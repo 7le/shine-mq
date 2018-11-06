@@ -1,5 +1,8 @@
 package top.arkstack.shine.mq;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -12,6 +15,10 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 import top.arkstack.shine.mq.annotation.DistributedTransAspect;
 import top.arkstack.shine.mq.coordinator.Coordinator;
 import top.arkstack.shine.mq.coordinator.redis.RedisCoordinator;
@@ -42,6 +49,31 @@ public class MqAutoConfiguration {
     @Configuration
     @ConditionalOnProperty(name = "shine.mq.distributed.transaction", havingValue = "true")
     public class RedisConfiguration {
+
+        @Bean
+        @ConditionalOnProperty(name = "shine.mq.distributed.redis-persistence",
+                havingValue = "true", matchIfMissing = true)
+        public RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
+            RedisTemplate<Object, Object> redisTemplate = new RedisTemplate<>();
+            redisTemplate.setConnectionFactory(redisConnectionFactory);
+
+            // 使用Jackson2JsonRedisSerialize 替换默认序列化
+            Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+            objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+
+            jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
+
+            // 设置value的序列化规则和 key的序列化规则
+            redisTemplate.setKeySerializer(new StringRedisSerializer());
+            redisTemplate.setValueSerializer(jackson2JsonRedisSerializer);
+            redisTemplate.setHashKeySerializer(new StringRedisSerializer());
+            redisTemplate.setHashValueSerializer(jackson2JsonRedisSerializer);
+            redisTemplate.afterPropertiesSet();
+            return redisTemplate;
+        }
 
         @Bean
         @ConditionalOnProperty(name = "shine.mq.distributed.redis-persistence",
@@ -78,6 +110,7 @@ public class MqAutoConfiguration {
                 //消息能投入正确的消息队列，并持久化，返回的ack为true
                 if (ack) {
                     log.info("The message has been successfully delivered to the queue, correlationData:{}", correlationData);
+                    coordinator.delStatus(msgId);
                 } else {
                     //失败了判断重试次数，重试次数大于0则继续发送
                     if (ext.getMaxRetries() > 0) {
@@ -90,8 +123,6 @@ public class MqAutoConfiguration {
                             log.error("Message retry failed to send, message:{} exception: ", ext.getMessage(), e);
                         }
                     } else {
-                        //因为系统A的操作已经执行，回滚代价比较大，则需要有个守护线程捞起失败的消息，重新发送
-                        coordinator.setRetry(msgId, ext.getMessage());
                         log.error("Message delivery failed, msgId: {}, cause: {}", msgId, cause);
                     }
                 }

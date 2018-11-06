@@ -35,6 +35,4 @@ public class MqConstant {
     public static final String DISTRIBUTED_MSG_READY = "distributed_msg_ready";
 
     public static final String DISTRIBUTED_MSG_PREPARE = "distributed_msg_prepare";
-
-    public static final String DISTRIBUTED_MSG_RETRY = "distributed_msg_retry";
 }

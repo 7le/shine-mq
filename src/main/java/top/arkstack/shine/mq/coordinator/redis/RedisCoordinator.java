@@ -23,23 +23,23 @@ public class RedisCoordinator implements Coordinator {
 
     @Override
     public void setPrepare(String msgId) {
-        redisUtil.sset(MqConstant.DISTRIBUTED_MSG_READY, msgId);
+        redisUtil.sset(MqConstant.DISTRIBUTED_MSG_PREPARE, msgId);
     }
 
     @Override
     public void setReady(String msgId, EventMessage message) {
-        redisUtil.hset(MqConstant.DISTRIBUTED_MSG_PREPARE, msgId, message);
-        redisUtil.sdel(MqConstant.DISTRIBUTED_MSG_READY, msgId);
+        redisUtil.hset(MqConstant.DISTRIBUTED_MSG_READY, msgId, message);
+        redisUtil.sdel(MqConstant.DISTRIBUTED_MSG_PREPARE, msgId);
     }
 
     @Override
-    public void setRetry(String msgId, EventMessage message) {
-        redisUtil.hset(MqConstant.DISTRIBUTED_MSG_RETRY, msgId, message);
+    public void delStatus(String msgId) {
+        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_READY, msgId);
     }
 
     @Override
     public EventMessage getMetaMsg(String msgId) {
-        return (EventMessage) redisUtil.hget(MqConstant.DISTRIBUTED_MSG_PREPARE, msgId);
+        return (EventMessage) redisUtil.hget(MqConstant.DISTRIBUTED_MSG_READY, msgId);
     }
 
 
@@ -89,9 +89,8 @@ public class RedisCoordinator implements Coordinator {
     }
 
     private boolean msgTimeOut(String messageId) throws Exception {
-        String messageTime = (messageId.split(MqConstant.SPLIT))[1];
-        long timeGap = System.currentTimeMillis() -
-                new SimpleDateFormat(MqConstant.TIME).parse(messageTime).getTime();
+        String time = (messageId.split(MqConstant.SPLIT))[1];
+        long timeGap = System.currentTimeMillis() - Long.parseLong(time);
         if (timeGap > MqConstant.TIME_OUT) {
             return true;
         }
