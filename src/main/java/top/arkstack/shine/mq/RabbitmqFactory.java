@@ -6,16 +6,18 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.DirectMessageListenerContainer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Autowired;
+import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.bean.SendTypeEnum;
+import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.processor.Processor;
 import top.arkstack.shine.mq.template.RabbitmqTemplate;
 import top.arkstack.shine.mq.template.Template;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * rabbitmq工厂
@@ -27,21 +29,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Data
 public class RabbitmqFactory implements Factory {
 
+    @Autowired
+    MessageAdapterHandler msgAdapterHandler;
+
     private static RabbitmqFactory rabbitmqFactory;
 
-    private RabbitmqProperties config;
+    private MqProperties config;
+
+    private MqProperties.Rabbit rabbit;
 
     private static CachingConnectionFactory rabbitConnectionFactory;
 
     private RabbitAdmin rabbitAdmin;
 
-    private static RabbitTemplate rabbitTemplate;
+    protected RabbitTemplate rabbitTemplate;
 
     private Template template;
 
-    private MessageAdapterHandler msgAdapterHandler = new MessageAdapterHandler();
-
-    private SimpleMessageListenerContainer listenerContainer;
+    private DirectMessageListenerContainer listenerContainer;
 
     private Map<String, Queue> queues = new HashMap<>();
 
@@ -49,41 +54,29 @@ public class RabbitmqFactory implements Factory {
 
     private Map<String, Exchange> exchanges = new HashMap<>();
 
-    private AtomicBoolean isStarted = new AtomicBoolean(false);
-
     /**
      * 缺省序列化方式 Jackson2JsonMessageConverter
      */
     private MessageConverter serializerMessageConverter = new Jackson2JsonMessageConverter();
 
 
-    private RabbitmqFactory(RabbitmqProperties config) {
+    private RabbitmqFactory(MqProperties config) {
         Objects.requireNonNull(config, "The RabbitmqProperties is empty.");
         this.config = config;
+        this.rabbit = config.getRabbit();
         rabbitAdmin = new RabbitAdmin(rabbitConnectionFactory);
         rabbitTemplate = new RabbitTemplate(rabbitConnectionFactory);
         rabbitTemplate.setMessageConverter(serializerMessageConverter);
         template = new RabbitmqTemplate(rabbitTemplate, serializerMessageConverter);
     }
 
-    @Override
-    public void start() {
-        if (isStarted.get()) {
-            return;
-        }
-        Set<String> mapping = msgAdapterHandler.getAllBinding();
-        for (String relation : mapping) {
-            String[] relaArr = relation.split("_");
-            declareBinding(relaArr[0], relaArr[1], relaArr[2], true, relaArr[3]);
-        }
-        if (config.isListenerEnable()) {
-            initMsgListenerAdapter();
-        }
-        isStarted.set(true);
-    }
-
-    public synchronized static RabbitmqFactory getInstance(RabbitmqProperties config, CachingConnectionFactory factory) {
+    public synchronized static RabbitmqFactory getInstance(MqProperties config, CachingConnectionFactory factory) {
         rabbitConnectionFactory = factory;
+        //设置生成者确认机制
+        rabbitConnectionFactory.setPublisherConfirms(true);
+        if (config.getRabbit().getChannelCacheSize() != null) {
+            rabbitConnectionFactory.setConnectionCacheSize(config.getRabbit().getChannelCacheSize());
+        }
         if (rabbitmqFactory == null) {
             rabbitmqFactory = new RabbitmqFactory(config);
         }
@@ -94,19 +87,22 @@ public class RabbitmqFactory implements Factory {
      * 初始化消息监听器容器
      */
     private void initMsgListenerAdapter() {
-        listenerContainer = new SimpleMessageListenerContainer();
+        listenerContainer = new DirectMessageListenerContainer();
         listenerContainer.setConnectionFactory(rabbitConnectionFactory);
-        if (config.getAcknowledgeMode() == 1) {
+        if (rabbit.getAcknowledgeMode() == 1) {
             listenerContainer.setAcknowledgeMode(AcknowledgeMode.MANUAL);
         } else {
             listenerContainer.setAcknowledgeMode(
-                    config.getAcknowledgeMode() == 2 ? AcknowledgeMode.NONE : AcknowledgeMode.AUTO);
+                    rabbit.getAcknowledgeMode() == 2 ? AcknowledgeMode.NONE : AcknowledgeMode.AUTO);
         }
         listenerContainer.setMessageListener(msgAdapterHandler);
         listenerContainer.setErrorHandler(new MessageErrorHandler());
-        listenerContainer.setPrefetchCount(config.getPrefetchSize());
-        listenerContainer.setConcurrentConsumers(config.getProcessSize());
-        listenerContainer.setTxSize(config.getPrefetchSize());
+        if (rabbit.getPrefetchCount() != null) {
+            listenerContainer.setPrefetchCount(rabbit.getPrefetchCount());
+        }
+        if (rabbit.getConsumersPerQueue() != null) {
+            listenerContainer.setConsumersPerQueue(rabbit.getConsumersPerQueue());
+        }
         listenerContainer.setQueues(queues.values().toArray(new Queue[queues.size()]));
         listenerContainer.start();
     }
@@ -120,21 +116,57 @@ public class RabbitmqFactory implements Factory {
     public Factory add(String queueName, String exchangeName, String routingKey, Processor processor, SendTypeEnum type,
                        MessageConverter messageConverter) {
         if (processor != null) {
-            msgAdapterHandler.add(queueName, exchangeName, routingKey, processor, type, messageConverter);
-            if (isStarted.get() && config.isListenerEnable()) {
+            msgAdapterHandler.add(exchangeName, routingKey, processor, type, messageConverter);
+            if (rabbit.isListenerEnable()) {
                 declareBinding(queueName, exchangeName, routingKey, true,
-                        (type == null ? SendTypeEnum.DIRECT.toString() : type.toString()));
-                listenerContainer.setQueues(queues.values().toArray(new Queue[queues.size()]));
+                        type == null ? SendTypeEnum.DIRECT.toString() : type.toString(), false);
+                if (listenerContainer == null) {
+                    initMsgListenerAdapter();
+                } else {
+                    listenerContainer.addQueueNames(queueName);
+                }
+            } else {
+                declareBinding(queueName, exchangeName, routingKey, false,
+                        type == null ? SendTypeEnum.DIRECT.toString() : type.toString(), false);
             }
             return this;
         } else {
-            declareBinding(queueName, exchangeName, routingKey, false, type.toString());
+            declareBinding(queueName, exchangeName, routingKey, false,
+                    type == null ? SendTypeEnum.DIRECT.toString() : type.toString(), false);
+            return this;
+        }
+    }
+
+    public Factory addDLX(String queueName, String exchangeName, String routingKey, Processor processor, SendTypeEnum type) {
+        return addDLX(queueName, exchangeName, routingKey, processor, type, serializerMessageConverter);
+    }
+
+    public Factory addDLX(String queueName, String exchangeName, String routingKey, Processor processor, SendTypeEnum type,
+                          MessageConverter messageConverter) {
+        if (processor != null) {
+            msgAdapterHandler.add(exchangeName, routingKey, processor, type, messageConverter);
+            if (rabbit.isListenerEnable()) {
+                declareBinding(queueName, exchangeName, routingKey, true,
+                        type == null ? SendTypeEnum.DIRECT.toString() : type.toString(), true);
+                if (listenerContainer == null) {
+                    initMsgListenerAdapter();
+                } else {
+                    listenerContainer.addQueueNames(queueName);
+                }
+            } else {
+                declareBinding(queueName, exchangeName, routingKey, false,
+                        type == null ? SendTypeEnum.DIRECT.toString() : type.toString(), true);
+            }
+            return this;
+        } else {
+            declareBinding(queueName, exchangeName, routingKey, false,
+                    type == null ? SendTypeEnum.DIRECT.toString() : type.toString(), true);
             return this;
         }
     }
 
     private synchronized void declareBinding(String queueName, String exchangeName, String routingKey,
-                                             boolean isPutQueue, String type) {
+                                             boolean isPutQueue, String type, boolean isDlx) {
         String bindRelation = queueName + "_" + exchangeName + "_" + routingKey + "_" + type;
         if (bind.contains(bindRelation)) {
             return;
@@ -143,9 +175,9 @@ public class RabbitmqFactory implements Factory {
         Exchange exchange = exchanges.get(exchangeName);
         if (exchange == null) {
             if (SendTypeEnum.TOPIC.toString().equals(type)) {
-                exchange = new TopicExchange(exchangeName, config.isDurable(), config.isAutoDelete(), null);
+                exchange = new TopicExchange(exchangeName, rabbit.isDurable(), rabbit.isAutoDelete(), null);
             } else {
-                exchange = new DirectExchange(exchangeName, config.isDurable(), config.isAutoDelete(), null);
+                exchange = new DirectExchange(exchangeName, rabbit.isDurable(), rabbit.isAutoDelete(), null);
             }
             exchanges.put(exchangeName, exchange);
             rabbitAdmin.declareExchange(exchange);
@@ -153,7 +185,14 @@ public class RabbitmqFactory implements Factory {
         }
         Queue queue = queues.get(queueName);
         if (queue == null) {
-            queue = new Queue(queueName, config.isDurable(), config.isExclusive(), config.isAutoDelete());
+            if (isDlx) {
+                Map<String, Object> args = new HashMap<>(2);
+                args.put("x-dead-letter-exchange", MqConstant.DEAD_LETTER_EXCHANGE);
+                args.put("x-dead-letter-routing-key", MqConstant.DEAD_LETTER_ROUTEKEY);
+                queue = new Queue(queueName, rabbit.isDurable(), rabbit.isExclusive(), rabbit.isAutoDelete(), args);
+            } else {
+                queue = new Queue(queueName, rabbit.isDurable(), rabbit.isExclusive(), rabbit.isAutoDelete());
+            }
             if (isPutQueue) {
                 queues.put(queueName, queue);
             }
@@ -172,4 +211,12 @@ public class RabbitmqFactory implements Factory {
         }
     }
 
+    /**
+     * 扩展消息的CorrelationData，方便在回调中应用
+     */
+    public void setCorrelationData(String bizId, String coordinator, EventMessage msg, Integer retry) {
+        rabbitTemplate.setCorrelationDataPostProcessor(((message, correlationData) ->
+                new CorrelationDataExt(bizId, coordinator,
+                        retry == null ? config.getDistributed().getCommitMaxRetries() : retry, msg)));
+    }
 }

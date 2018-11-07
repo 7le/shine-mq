@@ -11,11 +11,6 @@ import top.arkstack.shine.mq.processor.Processor;
 public interface Factory {
 
     /**
-     * 启动方法
-     */
-    void start();
-
-    /**
      * 添加exchange和queue
      * 默认为 DIRECT模式 暂时先支持（DIRECT和TOPIC）
      * 生产者创建队列不需要增加processor，消费者需要添加processor

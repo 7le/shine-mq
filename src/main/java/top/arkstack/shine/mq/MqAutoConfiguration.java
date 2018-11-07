@@ -1,31 +1,141 @@
 package top.arkstack.shine.mq;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+import top.arkstack.shine.mq.annotation.DistributedTransAspect;
+import top.arkstack.shine.mq.coordinator.Coordinator;
+import top.arkstack.shine.mq.coordinator.redis.RedisCoordinator;
+import top.arkstack.shine.mq.coordinator.redis.RedisUtil;
 
 /**
  * @author 7le
  * @version 1.0.0
  */
+@Slf4j
 @Configuration
 @EnableConfigurationProperties
-@Import(RabbitAutoConfiguration.class)
+@Import({RabbitAutoConfiguration.class, DistributedTransAspect.class, MessageAdapterHandler.class})
 public class MqAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public RabbitmqProperties mqProperties() {
-        return new RabbitmqProperties();
+    public MqProperties mqProperties() {
+        return new MqProperties();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public RabbitmqFactory rabbitmqFactory(RabbitmqProperties mqProperties, CachingConnectionFactory factory) {
-        return RabbitmqFactory.getInstance(mqProperties, factory);
+    public RabbitmqFactory rabbitmqFactory(MqProperties properties, CachingConnectionFactory factory) {
+        return RabbitmqFactory.getInstance(properties, factory);
+    }
+
+    @Configuration
+    @ConditionalOnProperty(name = "shine.mq.distributed.transaction", havingValue = "true")
+    public class RedisConfiguration {
+
+        @Bean
+        @ConditionalOnProperty(name = "shine.mq.distributed.redis-persistence",
+                havingValue = "true", matchIfMissing = true)
+        public RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
+            RedisTemplate<Object, Object> redisTemplate = new RedisTemplate<>();
+            redisTemplate.setConnectionFactory(redisConnectionFactory);
+
+            // 使用Jackson2JsonRedisSerialize 替换默认序列化
+            Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+            objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+
+            jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
+
+            // 设置value的序列化规则和 key的序列化规则
+            redisTemplate.setKeySerializer(new StringRedisSerializer());
+            redisTemplate.setValueSerializer(jackson2JsonRedisSerializer);
+            redisTemplate.setHashKeySerializer(new StringRedisSerializer());
+            redisTemplate.setHashValueSerializer(jackson2JsonRedisSerializer);
+            redisTemplate.afterPropertiesSet();
+            return redisTemplate;
+        }
+
+        @Bean
+        @ConditionalOnProperty(name = "shine.mq.distributed.redis-persistence",
+                havingValue = "true", matchIfMissing = true)
+        public RedisCoordinator redisCoordinator() {
+            return new RedisCoordinator();
+        }
+
+        @Bean
+        @ConditionalOnProperty(name = "shine.mq.distributed.redis-persistence",
+                havingValue = "true", matchIfMissing = true)
+        public RedisUtil redisUtil() {
+            return new RedisUtil();
+        }
+    }
+
+    @Autowired
+    ApplicationContext applicationContext;
+
+    @Bean
+    @ConditionalOnProperty(name = "shine.mq.distributed.transaction", havingValue = "true")
+    public RabbitTemplate rabbitmqTemplate(RabbitmqFactory rabbitmqFactory) {
+        if (rabbitmqFactory.getRabbit().getAcknowledgeMode() != 1) {
+            throw new ShineMqException("Distributed transactions must use MANUAL(AcknowledgeMode=1) mode!");
+        }
+        RabbitTemplate template = rabbitmqFactory.getRabbitTemplate();
+        //消息发送到RabbitMQ交换器后接收ack回调
+        template.setConfirmCallback((correlationData, ack, cause) -> {
+            if (correlationData != null) {
+                log.info("ConfirmCallback ack: {} correlationData: {} cause: {}", ack, correlationData, cause);
+                String msgId = correlationData.getId();
+                CorrelationDataExt ext = (CorrelationDataExt) correlationData;
+                Coordinator coordinator = (Coordinator) applicationContext.getBean(ext.getCoordinator());
+                //消息能投入正确的消息队列，并持久化，返回的ack为true
+                if (ack) {
+                    log.info("The message has been successfully delivered to the queue, correlationData:{}", correlationData);
+                    coordinator.delStatus(msgId);
+                } else {
+                    //失败了判断重试次数，重试次数大于0则继续发送
+                    if (ext.getMaxRetries() > 0) {
+                        try {
+                            rabbitmqFactory.setCorrelationData(msgId, ext.getCoordinator(), ext.getMessage(),
+                                    ext.getMaxRetries() - 1);
+                            rabbitmqFactory.getTemplate().send(ext.getMessage().getExchangeName(), ext.getMessage(),
+                                    ext.getMessage().getRoutingKey());
+                        } catch (Exception e) {
+                            log.error("Message retry failed to send, message:{} exception: ", ext.getMessage(), e);
+                        }
+                    } else {
+                        log.error("Message delivery failed, msgId: {}, cause: {}", msgId, cause);
+                    }
+                }
+            }
+        });
+        //使用return-callback时必须设置mandatory为true
+        template.setMandatory(true);
+        //消息发送到RabbitMQ交换器，但无相应Exchange时的回调
+        template.setReturnCallback((message, replyCode, replyText, exchange, routingKey) -> {
+            String messageId = message.getMessageProperties().getMessageId();
+            log.error("ReturnCallback exception, no matching queue found. message id: {}, replyCode: {}, replyText: {},"
+                    + "exchange: {}, routingKey: {}", messageId, replyCode, replyText, exchange, routingKey);
+        });
+        return template;
     }
 }

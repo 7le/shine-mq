@@ -12,9 +12,11 @@ package top.arkstack.shine.mq.bean;
  *
  * RPC:    远程调用方法
  *
+ * Distributed: 自定义添加的分布式事务类型
+ *
  * @author 7le
  * @version 1.0.0
  */
 public enum SendTypeEnum {
-    TOPIC, RPC, FANOUT, DIRECT
+    TOPIC, RPC, FANOUT, DIRECT, DISTRIBUTED
 }

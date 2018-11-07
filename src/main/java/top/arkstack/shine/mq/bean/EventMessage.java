@@ -17,8 +17,6 @@ public class EventMessage implements Serializable {
 
     private static final long serialVersionUID = -9203358002484642594L;
 
-    private String queueName;
-
     private String exchangeName;
 
     private String routingKey;
@@ -26,4 +24,8 @@ public class EventMessage implements Serializable {
     private String sendTypeEnum;
 
     private Object data;
+
+    private String coordinator;
+
+    private String messageId;
 }

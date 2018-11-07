@@ -9,7 +9,7 @@
 <dependency>
     <groupId>top.arkstack</groupId>
     <artifactId>shine-mq</artifactId>
-    <version>1.0.3</version>
+    <version>2.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -24,34 +24,23 @@
 
 ```
     /**
-     * 允许空闲的最大通道数
-     */
-    private int channelCacheSize = 25;
-
-    /**
-     * 建立连接的超时时间
-     */
-    private int connectionTimeout = 0;
-
-    /**
-     * 每次从队列中取几条，只有等收到Ack了才重新取
-     * 0为循环调度 1为公平调度
-     */
-    private int prefetchSize = 1;
-
-    /**
      * {@link org.springframework.amqp.core.AcknowledgeMode}
-     *
+     * <p>
      * 0 AUTO
      * 1 MANUAL
      * 2 NONE
      */
-    private int acknowledgeMode = 0;
+    private int acknowledgeMode = 1;
 
     /**
-     * 消费者数量 缺省为CPU核数*2
+     * 每个消费者可能未完成的未确认消息的数量。
      */
-    private int processSize = Runtime.getRuntime().availableProcessors() << 1;
+    private Integer prefetchCount = null;
+
+    /**
+     * 为每个已配置队列创建的消费者数
+     */
+    private Integer consumersPerQueue = null;
 
     /**
      * 是否持久化，指是否保存到erlang自带得数据库mnesia中，即重启服务是否消失
