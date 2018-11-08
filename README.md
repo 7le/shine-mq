@@ -16,13 +16,45 @@
 ### 🐣 主要功能
 
 * 封装mq的操作，方便使用
-* 实现基于可靠消息服务的分布式事务 (coding...)
+* 实现基于可靠消息服务的分布式事务 
 
 ### 🌈 使用文档
 
-目前兼容Direct和Topic模式，支持springboot的配置，具体可配置的参数如下：
+分布式的事务支持springboot的配置，具体可配置的参数如下：
 
 ```
+    /**
+     * 是否初始化 开启分布式事务 缺省为false
+     */
+    private boolean transaction = false;
+
+    /**
+     * 提交ack 失败最大重试次数
+     */
+    private Integer commitMaxRetries = 3;
+
+    /**
+     * 接收消息 ack 失败最大尝试次数
+     */
+    private Integer receiveMaxRetries = 3;
+
+    /**
+     * 默认提供redis中间件来实现消息提交到mq之前的持久化
+     *
+     * 也可以自己实现 {@link top.arkstack.shine.mq.coordinator.Coordinator}
+     * 或者不想用redis，可以设置为false，就不会有redis的依赖
+     */
+    private boolean redisPersistence = true;
+
+```
+
+封装mq的操作目前兼容Direct和Topic模式，可配置的参数如下：
+
+```
+    /**
+     * 是否初始化消息监听者， 若服务只是Producer则关闭
+     */
+    private boolean listenerEnable = false;
     /**
      * {@link org.springframework.amqp.core.AcknowledgeMode}
      * <p>
@@ -61,6 +93,11 @@
      * 是否初始化消息监听者， 若服务只是Producer则关闭
      */
     private boolean listenerEnable = false;
+
+    /**
+     * 通道缓存
+     */
+    private Integer channelCacheSize = null;
 ```
 
 **rabbitmq**的配置复用spring的配置
