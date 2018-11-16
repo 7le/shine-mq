@@ -20,7 +20,9 @@
 
 ### 🌈 使用文档
 
-分布式的事务支持springboot的配置，具体可配置的参数如下：
+对应的演示demo可以戳 [shine-mq-demo](https://github.com/7le/shine-mq-demo)
+
+分布式事务支持springboot配置，具体可配置的参数如下：
 
 ```
     /**
@@ -98,79 +100,4 @@
      * 通道缓存
      */
     private Integer channelCacheSize = null;
-```
-
-**rabbitmq**的配置复用spring的配置
-
-```
-spring:
-  rabbitmq:
-    host: 114.215.122.xxx
-    username: xxxxx
-    password: xxxxx
-```
-
-如果需要开启消费者的服务的话，设置**listener-enable**参数为**true**，默认为**false**，以yml举例如下：
-
-```
-shine:
-  mq:
-    rabbit:
-      listener-enable: true
-```
-
-对于生产者，demo如下，``RabbitmqFactory``已经注入spring容器，可以直接通过``@Autowired``获得。
-
-通过**rabbitmqFactory.add**可以实现动态增加生产者和消费者。
-
-```
-@Component
-public class Producer {
-
-    @Autowired
-    RabbitmqFactory rabbitmqFactory;
-
-    @PostConstruct
-    public void pull() throws Exception {
-        rabbitmqFactory.add("queue-test", "exchange-test", "yoyo", null);
-        rabbitmqFactory.start();
-        for (int i = 0; i < 50; i++) {
-            rabbitmqFactory.getTemplate().send("queue-test", "exchange-test", "hello world "+i, "yoyo");
-        }
-        System.out.println("------------------------pull end-------------------------------");
-    }
-}
-```
-
-对于消费者，demo如下，``Processor``需要自己实现，这里写获得消息后的业务处理。
-
-```
-@Component
-public class Consumer {
-
-    @Autowired
-    RabbitmqFactory rabbitmqFactory;
-
-    @PostConstruct
-    public void pull() throws Exception {
-        rabbitmqFactory.add("queue-test", "exchange-test", "yoyo", new ProcessorTest(), null);
-        rabbitmqFactory.start();
-    }
-
-    static class ProcessorTest extends BaseProcessor {
-    
-        @Override
-        public Object process(Object msg, Message message, Channel channel) {
-            System.out.println(" process: " + msg);
-            try {
-                TimeUnit.SECONDS.sleep(10);
-                //如果选择了MANUAL模式 需要手动回执ack
-                //channel.basicAck(message.getMessageProperties().getDeliveryTag(),false);
-            } catch (Exception e1) {
-                e1.printStackTrace();
-            }
-            return null;
-        }
-    }
-}
 ```
