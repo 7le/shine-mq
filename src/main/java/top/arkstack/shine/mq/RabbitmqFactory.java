@@ -1,6 +1,7 @@
 package top.arkstack.shine.mq;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -10,9 +11,11 @@ import org.springframework.amqp.rabbit.listener.DirectMessageListenerContainer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.bean.SendTypeEnum;
 import top.arkstack.shine.mq.constant.MqConstant;
+import top.arkstack.shine.mq.coordinator.Coordinator;
 import top.arkstack.shine.mq.processor.Processor;
 import top.arkstack.shine.mq.template.RabbitmqTemplate;
 import top.arkstack.shine.mq.template.Template;
@@ -27,7 +30,11 @@ import java.util.*;
  * @version 1.0.0
  */
 @Data
+@Slf4j
 public class RabbitmqFactory implements Factory {
+
+    @Autowired
+    ApplicationContext applicationContext;
 
     @Autowired
     MessageAdapterHandler msgAdapterHandler;
@@ -67,6 +74,9 @@ public class RabbitmqFactory implements Factory {
         rabbitAdmin = new RabbitAdmin(rabbitConnectionFactory);
         rabbitTemplate = new RabbitTemplate(rabbitConnectionFactory);
         rabbitTemplate.setMessageConverter(serializerMessageConverter);
+        if (config.getDistributed().isTransaction()) {
+            setRabbitTemplateForDis(config);
+        }
         template = new RabbitmqTemplate(rabbitTemplate, serializerMessageConverter);
     }
 
@@ -105,6 +115,48 @@ public class RabbitmqFactory implements Factory {
         }
         listenerContainer.setQueues(queues.values().toArray(new Queue[queues.size()]));
         listenerContainer.start();
+    }
+
+    private void setRabbitTemplateForDis(MqProperties config) {
+        if (config.getRabbit().getAcknowledgeMode() != 1) {
+            throw new ShineMqException("Distributed transactions must use MANUAL(AcknowledgeMode=1) mode!");
+        }
+        //消息发送到RabbitMQ交换器后接收ack回调
+        rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
+            if (correlationData != null) {
+                log.info("ConfirmCallback ack: {} correlationData: {} cause: {}", ack, correlationData, cause);
+                String msgId = correlationData.getId();
+                CorrelationDataExt ext = (CorrelationDataExt) correlationData;
+                Coordinator coordinator = (Coordinator) applicationContext.getBean(ext.getCoordinator());
+                //消息能投入正确的消息队列，并持久化，返回的ack为true
+                if (ack) {
+                    log.info("The message has been successfully delivered to the queue, correlationData:{}", correlationData);
+                    coordinator.delStatus(msgId);
+                } else {
+                    //失败了判断重试次数，重试次数大于0则继续发送
+                    if (ext.getMaxRetries() > 0) {
+                        try {
+                            rabbitmqFactory.setCorrelationData(msgId, ext.getCoordinator(), ext.getMessage(),
+                                    ext.getMaxRetries() - 1);
+                            rabbitmqFactory.getTemplate().send(ext.getMessage().getExchangeName(), ext.getMessage(),
+                                    ext.getMessage().getRoutingKey());
+                        } catch (Exception e) {
+                            log.error("Message retry failed to send, message:{} exception: ", ext.getMessage(), e);
+                        }
+                    } else {
+                        log.error("Message delivery failed, msgId: {}, cause: {}", msgId, cause);
+                    }
+                }
+            }
+        });
+        //使用return-callback时必须设置mandatory为true
+        rabbitTemplate.setMandatory(true);
+        //消息发送到RabbitMQ交换器，但无相应Exchange时的回调
+        rabbitTemplate.setReturnCallback((message, replyCode, replyText, exchange, routingKey) -> {
+            String messageId = message.getMessageProperties().getMessageId();
+            log.error("ReturnCallback exception, no matching queue found. message id: {}, replyCode: {}, replyText: {},"
+                    + "exchange: {}, routingKey: {}", messageId, replyCode, replyText, exchange, routingKey);
+        });
     }
 
     @Override
