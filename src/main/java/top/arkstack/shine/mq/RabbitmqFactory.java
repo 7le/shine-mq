@@ -160,6 +160,21 @@ public class RabbitmqFactory implements Factory {
     }
 
     @Override
+    public Factory add(String queueName, String exchangeName, String routingKey) {
+        return add(queueName, exchangeName, routingKey, null, SendTypeEnum.DIRECT, serializerMessageConverter);
+    }
+
+    @Override
+    public Factory add(String queueName, String exchangeName, String routingKey, SendTypeEnum type) {
+        return add(queueName, exchangeName, routingKey, null,  type, serializerMessageConverter);
+    }
+
+    @Override
+    public Factory add(String queueName, String exchangeName, String routingKey, Processor processor) {
+        return add(queueName, exchangeName, routingKey, processor, SendTypeEnum.DIRECT, serializerMessageConverter);
+    }
+
+    @Override
     public Factory add(String queueName, String exchangeName, String routingKey, Processor processor, SendTypeEnum type) {
         return add(queueName, exchangeName, routingKey, processor, type, serializerMessageConverter);
     }
@@ -188,11 +203,12 @@ public class RabbitmqFactory implements Factory {
             return this;
         }
     }
-
+    @Override
     public Factory addDLX(String queueName, String exchangeName, String routingKey, Processor processor, SendTypeEnum type) {
         return addDLX(queueName, exchangeName, routingKey, processor, type, serializerMessageConverter);
     }
 
+    @Override
     public Factory addDLX(String queueName, String exchangeName, String routingKey, Processor processor, SendTypeEnum type,
                           MessageConverter messageConverter) {
         if (processor != null) {
