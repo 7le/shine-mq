@@ -139,7 +139,9 @@ public class RedisUtil extends AbstractDistributedLock {
         try {
             ValueOperations<Serializable, Object> operations = redisTemplate.opsForValue();
             operations.set(key, value);
-            redisTemplate.expire(key, expireTime, TimeUnit.MILLISECONDS);
+            if (expireTime > 0) {
+                expire(key, expireTime);
+            }
             result = true;
         } catch (Exception e) {
 
