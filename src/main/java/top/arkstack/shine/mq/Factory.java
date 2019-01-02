@@ -128,4 +128,14 @@ public interface Factory {
      * @return
      */
     Factory addDLX(String queueName, String exchangeName, String routingKey, Processor processor, SendTypeEnum type, MessageConverter messageConverter);
+
+    /**
+     * 删除队列
+     *
+     * @param queueName         队列
+     * @param exchangeName      交换器
+     * @param routingKey        路由密钥
+     * @param type              exchange模式
+     */
+    void delete(String queueName, String exchangeName, String routingKey, SendTypeEnum type);
 }
