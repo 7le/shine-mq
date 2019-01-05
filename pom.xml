@@ -6,7 +6,7 @@
 
     <groupId>top.arkstack</groupId>
     <artifactId>shine-mq</artifactId>
-    <version>2.0.0-SNAPSHOT</version>
+    <version>2.0.0</version>
     <packaging>jar</packaging>
 
     <name>shine-mq</name>
@@ -28,7 +28,7 @@
         <rabbit-amqp-client.version>5.4.0</rabbit-amqp-client.version>
         <spring.boot>2.0.3.RELEASE</spring.boot>
         <aspectj.version>1.8.13</aspectj.version>
-        <jackson.version>2.9.7</jackson.version>
+        <jackson.version>2.9.8</jackson.version>
         <redis.version>1.4.7.RELEASE</redis.version>
     </properties>
 

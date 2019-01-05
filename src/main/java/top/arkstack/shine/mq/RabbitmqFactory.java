@@ -233,6 +233,14 @@ public class RabbitmqFactory implements Factory {
         }
     }
 
+    @Override
+    public void delete(String queueName, String exchangeName, String routingKey, SendTypeEnum type) {
+        queues.remove(queueName);
+        msgAdapterHandler.remove(exchangeName, routingKey, type);
+        listenerContainer.removeQueueNames(queueName);
+        rabbitAdmin.deleteQueue(queueName);
+    }
+
     private synchronized void declareBinding(String queueName, String exchangeName, String routingKey,
                                              boolean isPutQueue, String type, boolean isDlx) {
         String bindRelation = queueName + "_" + exchangeName + "_" + routingKey + "_" + type;

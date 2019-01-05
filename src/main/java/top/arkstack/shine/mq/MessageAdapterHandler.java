@@ -62,6 +62,11 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
         }
     }
 
+    protected void remove(String exchangeName, String routingKey, SendTypeEnum type) {
+        map.remove(exchangeName + "_" + routingKey + "_" +
+                (type == null ? SendTypeEnum.DIRECT.toString() : type.toString()));
+    }
+
     @Override
     public void onMessage(Message message, Channel channel) {
         EventMessage em;
