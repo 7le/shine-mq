@@ -68,39 +68,46 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
     }
 
     @Override
-    public void onMessage(Message message, Channel channel) {
-        EventMessage em;
-        String msgId = message.getMessageProperties().getMessageId();
+    public void onMessage(Message message, Channel channel) throws Exception {
+        EventMessage em = null;
+        Coordinator coordinator = null;
         long tag = message.getMessageProperties().getDeliveryTag();
+        String msgId = message.getMessageProperties().getMessageId();
         try {
+            ProcessorWrap wrap;
             em = JSON.parseObject(message.getBody(), EventMessage.class);
-            ProcessorWrap wrap = map.get(em.getExchangeName() + "_" + em.getRoutingKey() + "_" + em.getSendTypeEnum());
-            wrap.process(em.getData(), message, channel);
-            Coordinator coordinator = null;
-            try {
-                //如果是分布式事务的消息，sdk提供ack应答，无须自己手动ack
-                if (SendTypeEnum.DISTRIBUTED.toString().equals(em.getSendTypeEnum())) {
-                    Objects.requireNonNull(em.getCoordinator(),
-                            "Distributed transaction message error: coordinator is null.");
-                    coordinator = (Coordinator) applicationContext.getBean(em.getCoordinator());
-                    channel.basicAck(tag, false);
-                }
-            } catch (IOException e) {
-                log.error("Consume message failed , message: {} :", message.getBody(), e);
-                if (SendTypeEnum.DISTRIBUTED.toString().equals(em.getSendTypeEnum())) {
-                    Double resendCount = coordinator.incrementResendKey(MqConstant.RECEIVE_RETRIES, msgId);
-                    if (resendCount >= rabbitmqFactory.getConfig().getDistributed().getReceiveMaxRetries()) {
-                        // 放入死信队列
-                        channel.basicNack(tag, false, false);
-                        coordinator.delResendKey(MqConstant.RECEIVE_RETRIES, msgId);
-                    } else {
-                        // 重新放入队列 等待消费
-                        channel.basicNack(tag, false, true);
-                    }
-                }
+            if (MqConstant.DEAD_LETTER_EXCHANGE.equals(message.getMessageProperties().getReceivedExchange()) &&
+                    MqConstant.DEAD_LETTER_ROUTEKEY.equals(message.getMessageProperties().getReceivedRoutingKey())) {
+                wrap = map.get(MqConstant.DEAD_LETTER_EXCHANGE + "_" + MqConstant.DEAD_LETTER_ROUTEKEY +
+                        "_" + SendTypeEnum.DLX);
+            } else {
+                wrap = map.get(em.getExchangeName() + "_" + em.getRoutingKey() + "_" + em.getSendTypeEnum());
+            }
+            //如果是分布式事务的消息，sdk提供ack应答，无须自己手动ack
+            if (SendTypeEnum.DISTRIBUTED.toString().equals(em.getSendTypeEnum())) {
+                Objects.requireNonNull(em.getCoordinator(),
+                        "Distributed transaction message error: coordinator is null.");
+                coordinator = (Coordinator) applicationContext.getBean(em.getCoordinator());
+                wrap.process(em.getData(), message, channel);
+                channel.basicAck(tag, false);
+            } else {
+                wrap.process(em.getData(), message, channel);
             }
         } catch (Exception e) {
             log.error("MessageAdapterHandler error, message: {} :", message.getBody(), e);
+            if (em != null && coordinator != null && SendTypeEnum.DISTRIBUTED.toString().equals(em.getSendTypeEnum())) {
+                Double resendCount = coordinator.incrementResendKey(MqConstant.RECEIVE_RETRIES, msgId);
+                if (resendCount >= rabbitmqFactory.getConfig().getDistributed().getReceiveMaxRetries()) {
+                    // 放入死信队列
+                    channel.basicNack(tag, false, false);
+                    coordinator.delResendKey(MqConstant.RECEIVE_RETRIES, msgId);
+                } else {
+                    // 重新放入队列 等待消费
+                    channel.basicNack(tag, false, true);
+                }
+            } else {
+                throw e;
+            }
         }
     }
 
