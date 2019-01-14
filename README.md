@@ -1,10 +1,18 @@
 # shine-mq
-
+---
 [![Gitter](https://badges.gitter.im/7le/shine-mq.svg)](https://gitter.im/7le/shine-mq)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/top.arkstack/shine-mq/badge.svg)](https://search.maven.org/artifact/top.arkstack/shine-mq/)
 [![Latest release](https://img.shields.io/github/release/7le/shine-mq.svg)](https://github.com/7le/shine-mq/releases/latest)
 
-### 🐳 maven
+### 🐣 Features
+
+* 无缝集成 spring-boot-starter
+* 封装mq的操作，方便使用
+* 实现基于可靠消息服务的分布式事务（采用AOP思想与Spring无缝集成，仅通过注解就可使用）
+* 可靠消息默认存储方式：redis (可自行执行实现)
+* 目前消息中间件支持 : rabbitmq
+
+### 🐳 Maven
 
 ```
 <dependency>
@@ -13,23 +21,20 @@
     <version>2.0.1</version>
 </dependency>
 ```
-
-### 🐣 主要功能
-
-* 封装mq的操作，方便使用
-* 实现基于可靠消息服务的分布式事务
  
-#### 🎀 分布式事务
+### 🎀 Distributed transaction
 
 ![shine-mq](https://github.com/7le/7le.github.io/raw/master/image/dis/shine-mq.jpg)
 
 实现思路戳 [分布式事务：基于可靠消息服务](https://7le.top/2018/12/04/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%EF%BC%9A%E5%9F%BA%E4%BA%8E%E5%8F%AF%E9%9D%A0%E6%B6%88%E6%81%AF%E6%9C%8D%E5%8A%A1/#more)
 
-### 🌈 使用文档
+### 🐹 Demo
 
-对应的演示demo可以戳 [shine-mq-demo](https://github.com/7le/shine-mq-demo)
+Demo戳 [shine-mq-demo](https://github.com/7le/shine-mq-demo)
 
-分布式事务支持springboot配置，具体可配置的参数如下：
+### 🌈 Configuration
+
+分布式事务的配置，具体可配置的参数如下：
 
 ```
     /**
@@ -40,6 +45,7 @@
     /**
      * 提交ack 失败最大重试次数
      */
+     
     private Integer commitMaxRetries = 3;
 
     /**
@@ -57,13 +63,14 @@
 
 ```
 
-封装mq的操作目前兼容Direct和Topic模式，可配置的参数如下：
+封装mq的操作，具体可配置的参数如下：
 
 ```
     /**
      * 是否初始化消息监听者， 若服务只是Producer则关闭
      */
     private boolean listenerEnable = false;
+    
     /**
      * {@link org.springframework.amqp.core.AcknowledgeMode}
      * <p>
