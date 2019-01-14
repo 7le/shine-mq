@@ -1,16 +1,16 @@
 # shine-mq
----
+
 [![Gitter](https://badges.gitter.im/7le/shine-mq.svg)](https://gitter.im/7le/shine-mq)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/top.arkstack/shine-mq/badge.svg)](https://search.maven.org/artifact/top.arkstack/shine-mq/)
 [![Latest release](https://img.shields.io/github/release/7le/shine-mq.svg)](https://github.com/7le/shine-mq/releases/latest)
 
 ### 🐣 Features
 
-* 无缝集成 spring-boot-starter
-* 封装mq的操作，方便使用
-* 实现基于可靠消息服务的分布式事务（采用AOP思想与Spring无缝集成，仅通过注解就可使用）
-* 可靠消息默认存储方式：redis (可自行执行实现)
-* 目前消息中间件支持 : rabbitmq
+* **无缝集成 spring-boot-starter**
+* **封装mq的操作，方便使用**
+* **实现基于可靠消息服务的分布式事务（采用AOP思想与Spring无缝集成，仅通过注解就可使用**
+* **可靠消息默认存储方式：redis (可自行执行实现)**
+* **目前消息中间件支持 : rabbitmq**
 
 ### 🐳 Maven
 
