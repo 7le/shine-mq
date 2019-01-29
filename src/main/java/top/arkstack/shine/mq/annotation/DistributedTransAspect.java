@@ -18,8 +18,6 @@ import top.arkstack.shine.mq.coordinator.Coordinator;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Enumeration;
 
 /**
@@ -40,7 +38,7 @@ public class DistributedTransAspect {
     @Autowired
     RabbitmqFactory rabbitmqFactory;
 
-    volatile boolean flag = true;
+    private volatile boolean flag = true;
 
 
     @Around(value = "@annotation(trans)")
@@ -89,8 +87,6 @@ public class DistributedTransAspect {
             rabbitmqFactory.getTemplate().send(message, 0, 0, SendTypeEnum.DISTRIBUTED);
         } catch (Exception e) {
             log.error("Message failed to be sent : ", e);
-            //消息未发出 清理之前暂存的消息状态
-            coordinator.delStatus(msgId);
             throw e;
         }
 
@@ -99,9 +95,9 @@ public class DistributedTransAspect {
     private static String getIpAddress() {
         try {
             Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces();
-            InetAddress ip = null;
+            InetAddress ip;
             while (allNetInterfaces.hasMoreElements()) {
-                NetworkInterface netInterface = (NetworkInterface) allNetInterfaces.nextElement();
+                NetworkInterface netInterface = allNetInterfaces.nextElement();
                 if (netInterface.isLoopback() || netInterface.isVirtual() || !netInterface.isUp()) {
                     continue;
                 } else {
