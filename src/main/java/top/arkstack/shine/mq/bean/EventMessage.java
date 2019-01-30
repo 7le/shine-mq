@@ -23,7 +23,7 @@ public class EventMessage implements Serializable {
 
     private String sendTypeEnum;
 
-    private Object data;
+    private Object checkBackId;
 
     private String coordinator;
 

@@ -12,18 +12,20 @@ public interface Coordinator {
 
     /**
      * 设置消息为prepare状态
+     * 用于回查时，定位执行的任务
      *
-     * @param msgId 消息id
+     * @param checkBackId 回查id
      */
-    void setPrepare(String msgId);
+    void setPrepare(String checkBackId);
 
     /**
      * 设置消息为ready状态，删除prepare状态
      *
-     * @param msgId   消息id
-     * @param message 消息
+     * @param msgId         消息id
+     * @param checkBackId   回查id
+     * @param message       消息
      */
-    void setReady(String msgId, EventMessage message);
+    void setReady(String msgId, String checkBackId, EventMessage message);
 
     /**
      * 删除状态（ready状态）
@@ -56,6 +58,20 @@ public interface Coordinator {
      * @throws Exception
      */
     List getReady() throws Exception;
+
+    /**
+     * 删除回查后的状态 (prepare)
+     *
+     * @param ids   回查id
+     */
+    void delCheckBackIdWithPrepare(List<String> ids);
+
+    /**
+     * 删除回查后的状态 (ready)
+     *
+     * @param ids   回查id
+     */
+    void delCheckBackIdWithReady(List<EventMessage> ids);
 
     /**
      * 消息重发次数+1

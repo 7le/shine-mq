@@ -20,7 +20,7 @@ public class MqConstant {
 
     public static final String TIME = "yyyy-MM-dd HH:mm:ss";
 
-    public static final long TIME_OUT = 3000;
+    public static final long TIME_OUT = 60 * 3000;
 
     public static final String DATA_DEFAULT = "";
 

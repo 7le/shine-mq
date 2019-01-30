@@ -61,21 +61,20 @@ public class DistributedTransAspect {
             log.error("No coordinator or not joined the spring container : ", e);
             throw e;
         }
-        coordinator.setPrepare(msgId);
-        Object data;
+        Object checkBackId;
         try {
-            data = pjp.proceed();
+            checkBackId = pjp.proceed();
         } catch (Exception e) {
             log.error("Biz execution failed, id : {} :", msgId, e);
             throw e;
         }
-        if (data == null) {
-            data = MqConstant.DATA_DEFAULT;
+        if (checkBackId == null) {
+            throw new ShineMqException("Check back id cannot be empty.");
         }
-        EventMessage message = new EventMessage(exchange, routeKey, SendTypeEnum.DISTRIBUTED.toString(), data,
+        EventMessage message = new EventMessage(exchange, routeKey, SendTypeEnum.DISTRIBUTED.toString(), checkBackId,
                 coordinatorName, msgId);
         //将消息持久化
-        coordinator.setReady(msgId, message);
+        coordinator.setReady(msgId, checkBackId.toString(), message);
         try {
             rabbitmqFactory.setCorrelationData(msgId, coordinatorName, message, null);
             rabbitmqFactory.addDLX(exchange, exchange, routeKey, null, null);

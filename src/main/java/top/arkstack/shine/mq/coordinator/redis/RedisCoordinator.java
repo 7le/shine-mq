@@ -22,14 +22,15 @@ public class RedisCoordinator implements Coordinator {
     private RedisUtil redisUtil;
 
     @Override
-    public void setPrepare(String msgId) {
-        redisUtil.sset(MqConstant.DISTRIBUTED_MSG_PREPARE, msgId);
+    public void setPrepare(String checkBackId) {
+        redisUtil.hset(MqConstant.DISTRIBUTED_MSG_PREPARE, checkBackId,
+                checkBackId + MqConstant.SPLIT + System.currentTimeMillis());
     }
 
     @Override
-    public void setReady(String msgId, EventMessage message) {
+    public void setReady(String msgId, String checkBackId, EventMessage message) {
         redisUtil.hset(MqConstant.DISTRIBUTED_MSG_READY, msgId, message);
-        redisUtil.sdel(MqConstant.DISTRIBUTED_MSG_PREPARE, msgId);
+        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_PREPARE, checkBackId);
     }
 
     @Override
@@ -42,35 +43,42 @@ public class RedisCoordinator implements Coordinator {
         return (EventMessage) redisUtil.hget(MqConstant.DISTRIBUTED_MSG_READY, msgId);
     }
 
-
     @Override
     public List getPrepare() throws Exception {
-        Set<Object> messageIds = redisUtil.sget(MqConstant.DISTRIBUTED_MSG_PREPARE);
-        List<String> messageAlert = new ArrayList();
-        for (Object messageId : messageIds) {
-            if (msgTimeOut(messageId.toString())) {
-                messageAlert.add(messageId.toString());
+        List<Object> values = redisUtil.hvalues(MqConstant.DISTRIBUTED_MSG_PREPARE);
+        List<String> keys = new ArrayList<>();
+        for (Object value : values) {
+            if (msgTimeOut(value.toString())) {
+                String key = (value.toString().split(MqConstant.SPLIT))[0];
+                keys.add(key);
             }
         }
-        redisUtil.sdel(MqConstant.DISTRIBUTED_MSG_PREPARE, messageAlert);
-        return messageAlert;
+        return keys;
     }
-
 
     @Override
     public List getReady() throws Exception {
         List<Object> messages = redisUtil.hvalues(MqConstant.DISTRIBUTED_MSG_READY);
         List<EventMessage> messageAlert = new ArrayList();
-        List<String> messageIds = new ArrayList<>();
         for (Object o : messages) {
             EventMessage m = (EventMessage) o;
             if (msgTimeOut(m.getMessageId())) {
                 messageAlert.add(m);
-                messageIds.add(m.getMessageId());
             }
         }
-        redisUtil.sdel(MqConstant.DISTRIBUTED_MSG_READY, messageIds);
         return messageAlert;
+    }
+
+    @Override
+    public void delCheckBackIdWithPrepare(List<String> ids) {
+        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_PREPARE, ids);
+    }
+
+    @Override
+    public void delCheckBackIdWithReady(List<EventMessage> ids) {
+        List<String> messageIds = new ArrayList<>();
+        ids.forEach(s -> messageIds.add(s.getMessageId()));
+        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_READY, ids);
     }
 
     @Override
