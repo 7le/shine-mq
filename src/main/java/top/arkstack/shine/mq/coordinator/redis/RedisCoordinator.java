@@ -71,14 +71,14 @@ public class RedisCoordinator implements Coordinator {
 
     @Override
     public void delCheckBackIdWithPrepare(List<String> ids) {
-        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_PREPARE, ids);
+        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_PREPARE, ids.toArray());
     }
 
     @Override
     public void delCheckBackIdWithReady(List<EventMessage> ids) {
         List<String> messageIds = new ArrayList<>();
         ids.forEach(s -> messageIds.add(s.getMessageId()));
-        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_READY, ids);
+        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_READY, ids.toArray());
     }
 
     @Override
