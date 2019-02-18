@@ -1,14 +1,13 @@
 package top.arkstack.shine.mq.coordinator.redis;
 
+import org.springframework.amqp.rabbit.support.CorrelationData;
 import org.springframework.beans.factory.annotation.Autowired;
 import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.coordinator.Coordinator;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * 提供基于redis实现
@@ -94,6 +93,11 @@ public class RedisCoordinator implements Coordinator {
     @Override
     public void delResendKey(String key, String hashKey) {
         redisUtil.del(key, hashKey);
+    }
+
+    @Override
+    public void confirmCallback(CorrelationData correlationData, boolean ack) {
+
     }
 
     private boolean msgTimeOut(String messageId) throws Exception {

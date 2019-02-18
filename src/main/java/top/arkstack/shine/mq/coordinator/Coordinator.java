@@ -1,5 +1,6 @@
 package top.arkstack.shine.mq.coordinator;
 
+import org.springframework.amqp.rabbit.support.CorrelationData;
 import top.arkstack.shine.mq.bean.EventMessage;
 
 import java.util.List;
@@ -99,4 +100,11 @@ public interface Coordinator {
      */
     void delResendKey(String key, String hashKey);
 
+    /**
+     * 消息发送到RabbitMQ后 自定义ack回调
+     *
+     * @param correlationData
+     * @param ack
+     */
+    void confirmCallback(CorrelationData correlationData, boolean ack);
 }

@@ -85,7 +85,7 @@ public class RabbitmqFactory implements Factory {
         //设置生成者确认机制
         rabbitConnectionFactory.setPublisherConfirms(true);
         if (config.getRabbit().getChannelCacheSize() != null) {
-            rabbitConnectionFactory.setConnectionCacheSize(config.getRabbit().getChannelCacheSize());
+            rabbitConnectionFactory.setChannelCacheSize(config.getRabbit().getChannelCacheSize());
         }
         if (rabbitmqFactory == null) {
             rabbitmqFactory = new RabbitmqFactory(config);
@@ -128,6 +128,7 @@ public class RabbitmqFactory implements Factory {
                 String msgId = correlationData.getId();
                 CorrelationDataExt ext = (CorrelationDataExt) correlationData;
                 Coordinator coordinator = (Coordinator) applicationContext.getBean(ext.getCoordinator());
+                coordinator.confirmCallback(correlationData, ack);
                 //消息能投入正确的消息队列，并持久化，返回的ack为true
                 if (ack) {
                     log.info("The message has been successfully delivered to the queue, correlationData:{}", correlationData);
@@ -166,7 +167,7 @@ public class RabbitmqFactory implements Factory {
 
     @Override
     public Factory add(String queueName, String exchangeName, String routingKey, SendTypeEnum type) {
-        return add(queueName, exchangeName, routingKey, null,  type, serializerMessageConverter);
+        return add(queueName, exchangeName, routingKey, null, type, serializerMessageConverter);
     }
 
     @Override
@@ -203,6 +204,7 @@ public class RabbitmqFactory implements Factory {
             return this;
         }
     }
+
     @Override
     public Factory addDLX(String queueName, String exchangeName, String routingKey, Processor processor, SendTypeEnum type) {
         return addDLX(queueName, exchangeName, routingKey, processor, type, serializerMessageConverter);
