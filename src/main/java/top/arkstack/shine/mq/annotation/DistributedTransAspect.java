@@ -71,11 +71,11 @@ public class DistributedTransAspect {
         if (checkBackId == null) {
             throw new ShineMqException("Check back id cannot be empty.");
         }
-        EventMessage message = new EventMessage(exchange, routeKey, SendTypeEnum.DISTRIBUTED.toString(), checkBackId,
-                coordinatorName, msgId);
-        //将消息持久化
-        coordinator.setReady(msgId, checkBackId.toString(), message);
         try {
+            EventMessage message = new EventMessage(exchange, routeKey, SendTypeEnum.DISTRIBUTED.toString(), checkBackId,
+                    coordinatorName, msgId);
+            //将消息持久化
+            coordinator.setReady(msgId, checkBackId.toString(), message);
             rabbitmqFactory.setCorrelationData(msgId, coordinatorName, message, null);
             rabbitmqFactory.addDLX(exchange, exchange, routeKey, null, null);
             if (flag) {
