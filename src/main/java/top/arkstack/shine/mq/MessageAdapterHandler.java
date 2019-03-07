@@ -88,10 +88,10 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
                 Objects.requireNonNull(em.getCoordinator(),
                         "Distributed transaction message error: coordinator is null.");
                 coordinator = (Coordinator) applicationContext.getBean(em.getCoordinator());
-                wrap.process(em.getCheckBackId(), message, channel);
+                wrap.process(em.getMsg(), message, channel);
                 channel.basicAck(tag, false);
             } else {
-                wrap.process(em.getCheckBackId(), message, channel);
+                wrap.process(em.getMsg(), message, channel);
             }
         } catch (Exception e) {
             log.error("MessageAdapterHandler error, message: {} :", message.getBody(), e);

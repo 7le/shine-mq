@@ -12,6 +12,7 @@ import top.arkstack.shine.mq.RabbitmqFactory;
 import top.arkstack.shine.mq.ShineMqException;
 import top.arkstack.shine.mq.bean.EventMessage;
 import top.arkstack.shine.mq.bean.SendTypeEnum;
+import top.arkstack.shine.mq.bean.TransferBean;
 import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.coordinator.Coordinator;
 
@@ -61,21 +62,25 @@ public class DistributedTransAspect {
             log.error("No coordinator or not joined the spring container : ", e);
             throw e;
         }
-        Object checkBackId;
+        Object bean;
         try {
-            checkBackId = pjp.proceed();
+            bean = pjp.proceed();
         } catch (Exception e) {
             log.error("Biz execution failed, id : {} :", msgId, e);
             throw e;
         }
-        if (checkBackId == null) {
+        if (!(bean instanceof TransferBean)) {
+            throw new ShineMqException("Return value please use TransferBean");
+        }
+        TransferBean transferBean = (TransferBean) bean;
+        if (transferBean.getCheckBackId() == null) {
             throw new ShineMqException("Check back id cannot be empty.");
         }
         try {
-            EventMessage message = new EventMessage(exchange, routeKey, SendTypeEnum.DISTRIBUTED.toString(), checkBackId,
+            EventMessage message = new EventMessage(exchange, routeKey, SendTypeEnum.DISTRIBUTED.toString(), transferBean,
                     coordinatorName, msgId);
             //将消息持久化
-            coordinator.setReady(msgId, checkBackId.toString(), message);
+            coordinator.setReady(msgId, transferBean.getCheckBackId(), message);
             rabbitmqFactory.setCorrelationData(msgId, coordinatorName, message, null);
             rabbitmqFactory.addDLX(exchange, exchange, routeKey, null, null);
             if (flag) {
