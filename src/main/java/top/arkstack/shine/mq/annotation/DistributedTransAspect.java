@@ -108,7 +108,7 @@ public class DistributedTransAspect {
                     Enumeration<InetAddress> addresses = netInterface.getInetAddresses();
                     while (addresses.hasMoreElements()) {
                         ip = addresses.nextElement();
-                        if (ip != null && ip instanceof Inet4Address) {
+                        if (ip instanceof Inet4Address) {
                             return ip.getHostAddress();
                         }
                     }

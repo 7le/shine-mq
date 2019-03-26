@@ -2,7 +2,9 @@ package top.arkstack.shine.mq.coordinator.redis;
 
 import org.springframework.amqp.rabbit.support.CorrelationData;
 import org.springframework.beans.factory.annotation.Autowired;
+import top.arkstack.shine.mq.RabbitmqFactory;
 import top.arkstack.shine.mq.bean.EventMessage;
+import top.arkstack.shine.mq.bean.SendTypeEnum;
 import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.coordinator.Coordinator;
 
@@ -19,6 +21,9 @@ public class RedisCoordinator implements Coordinator {
 
     @Autowired
     private RedisUtil redisUtil;
+
+    @Autowired
+    private RabbitmqFactory rabbitmqFactory;
 
     @Override
     public void setPrepare(String checkBackId) {
@@ -69,6 +74,13 @@ public class RedisCoordinator implements Coordinator {
     }
 
     @Override
+    public void compensateReady(EventMessage message) throws Exception {
+        rabbitmqFactory.setCorrelationData(message.getMessageId(), captureName(this.getClass().getSimpleName()),
+                message, null);
+        rabbitmqFactory.getTemplate().send(message, 0, 0, SendTypeEnum.DISTRIBUTED);
+    }
+
+    @Override
     public void delCheckBackIdWithPrepare(List<String> ids) {
         redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_PREPARE, ids.toArray());
     }
@@ -100,12 +112,16 @@ public class RedisCoordinator implements Coordinator {
 
     }
 
-    private boolean msgTimeOut(String messageId) throws Exception {
-        String time = (messageId.split(MqConstant.SPLIT))[1];
+    private boolean msgTimeOut(String messageId) {
+        String[] split = messageId.split(MqConstant.SPLIT);
+        String time = split[split.length - 1];
         long timeGap = System.currentTimeMillis() - Long.parseLong(time);
-        if (timeGap > MqConstant.TIME_OUT) {
-            return true;
-        }
-        return false;
+        return timeGap > MqConstant.TIME_OUT;
+    }
+
+    private static String captureName(String str) {
+        char[] cs = str.toCharArray();
+        cs[0] += 32;
+        return String.valueOf(cs);
     }
 }

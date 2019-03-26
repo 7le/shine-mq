@@ -18,7 +18,7 @@
 <dependency>
     <groupId>top.arkstack</groupId>
     <artifactId>shine-mq</artifactId>
-    <version>2.0.3</version>
+    <version>2.0.4-SNAPSHOT</version>
 </dependency>
 ```
  
@@ -121,6 +121,6 @@ Demo戳 [shine-mq-demo](https://github.com/7le/shine-mq-demo)
     private Integer channelCacheSize = null;
 ```
 
-### End
+### :octocat: End
 
 > 如果对你有帮助，那就帮忙点个星星把 ^.^

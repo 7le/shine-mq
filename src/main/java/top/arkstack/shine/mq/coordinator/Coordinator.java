@@ -22,9 +22,9 @@ public interface Coordinator {
     /**
      * 设置消息为ready状态，删除prepare状态
      *
-     * @param msgId         消息id
-     * @param checkBackId   回查id
-     * @param message       消息
+     * @param msgId       消息id
+     * @param checkBackId 回查id
+     * @param message     消息
      */
     void setReady(String msgId, String checkBackId, EventMessage message);
 
@@ -61,16 +61,24 @@ public interface Coordinator {
     List getReady() throws Exception;
 
     /**
+     * 补偿ready状态消息
+     *
+     * @param message 消息
+     * @throws Exception
+     */
+    void compensateReady(EventMessage message) throws Exception;
+
+    /**
      * 删除回查后的状态 (prepare)
      *
-     * @param ids   回查id
+     * @param ids 回查id
      */
     void delCheckBackIdWithPrepare(List<String> ids);
 
     /**
      * 删除回查后的状态 (ready)
      *
-     * @param ids   回查id
+     * @param ids 回查id
      */
     void delCheckBackIdWithReady(List<EventMessage> ids);
 
