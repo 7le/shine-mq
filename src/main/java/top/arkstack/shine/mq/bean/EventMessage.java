@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 /**
+ * 消息类
+ *
  * @author 7le
  * @version 1.0.0
  */

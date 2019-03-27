@@ -2,10 +2,13 @@ package top.arkstack.shine.mq.coordinator;
 
 import org.springframework.amqp.rabbit.support.CorrelationData;
 import top.arkstack.shine.mq.bean.EventMessage;
+import top.arkstack.shine.mq.bean.PrepareMessage;
 
 import java.util.List;
 
 /**
+ * 协调者
+ *
  * @author 7le
  * @version 2.0.0
  */
@@ -15,9 +18,17 @@ public interface Coordinator {
      * 设置消息为prepare状态
      * 用于回查时，定位执行的任务
      *
-     * @param checkBackId 回查id
+     * @param prepare prepare信息
      */
-    void setPrepare(String checkBackId);
+    void setPrepare(PrepareMessage prepare);
+
+    /**
+     * 补偿prepare状态消息
+     *
+     * @param prepare prepare信息
+     * @throws Exception
+     */
+    void compensatePrepare(PrepareMessage prepare) throws Exception;
 
     /**
      * 设置消息为ready状态，删除prepare状态
@@ -50,7 +61,7 @@ public interface Coordinator {
      * @return
      * @throws Exception
      */
-    List getPrepare() throws Exception;
+    List<PrepareMessage> getPrepare() throws Exception;
 
     /**
      * 获取ready状态消息
@@ -58,7 +69,7 @@ public interface Coordinator {
      * @return
      * @throws Exception
      */
-    List getReady() throws Exception;
+    List<EventMessage> getReady() throws Exception;
 
     /**
      * 补偿ready状态消息

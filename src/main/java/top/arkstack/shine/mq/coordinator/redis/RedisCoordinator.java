@@ -4,12 +4,15 @@ import org.springframework.amqp.rabbit.support.CorrelationData;
 import org.springframework.beans.factory.annotation.Autowired;
 import top.arkstack.shine.mq.RabbitmqFactory;
 import top.arkstack.shine.mq.bean.EventMessage;
+import top.arkstack.shine.mq.bean.PrepareMessage;
 import top.arkstack.shine.mq.bean.SendTypeEnum;
 import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.coordinator.Coordinator;
+import top.arkstack.shine.mq.util.HttpUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 提供基于redis实现
@@ -25,10 +28,31 @@ public class RedisCoordinator implements Coordinator {
     @Autowired
     private RabbitmqFactory rabbitmqFactory;
 
+    private volatile boolean flag = true;
+
     @Override
-    public void setPrepare(String checkBackId) {
-        redisUtil.hset(MqConstant.DISTRIBUTED_MSG_PREPARE, checkBackId,
-                checkBackId + MqConstant.SPLIT + System.currentTimeMillis());
+    public void setPrepare(PrepareMessage prepare) {
+        redisUtil.hset(MqConstant.DISTRIBUTED_MSG_PREPARE, prepare.getCheckBackId() + MqConstant.SPLIT +
+                System.currentTimeMillis(), prepare);
+    }
+
+    @Override
+    public void compensatePrepare(PrepareMessage prepare) throws Exception {
+        String coordinatorName = captureName(this.getClass().getSimpleName());
+        String msgId = prepare.getBizId() + MqConstant.SPLIT + HttpUtil.getIpAddress() + MqConstant.SPLIT + System.currentTimeMillis();
+        EventMessage message = new EventMessage(prepare.getExchangeName(), prepare.getRoutingKey(),
+                SendTypeEnum.DISTRIBUTED.toString(), prepare.getData(), coordinatorName, msgId);
+        //将消息持久化
+        setReady(msgId, prepare.getCheckBackId(), message);
+        rabbitmqFactory.setCorrelationData(msgId, coordinatorName, message, null);
+        rabbitmqFactory.addDLX(prepare.getExchangeName(), prepare.getExchangeName(), prepare.getRoutingKey(),
+                null, null);
+        if (flag) {
+            rabbitmqFactory.add(MqConstant.DEAD_LETTER_QUEUE, MqConstant.DEAD_LETTER_EXCHANGE,
+                    MqConstant.DEAD_LETTER_ROUTEKEY, null, null);
+            flag = false;
+        }
+        rabbitmqFactory.getTemplate().send(message, 0, 0, SendTypeEnum.DISTRIBUTED);
     }
 
     @Override
@@ -48,22 +72,21 @@ public class RedisCoordinator implements Coordinator {
     }
 
     @Override
-    public List getPrepare() throws Exception {
-        List<Object> values = redisUtil.hvalues(MqConstant.DISTRIBUTED_MSG_PREPARE);
-        List<String> keys = new ArrayList<>();
-        for (Object value : values) {
-            if (msgTimeOut(value.toString())) {
-                String key = (value.toString().split(MqConstant.SPLIT))[0];
-                keys.add(key);
+    public List<PrepareMessage> getPrepare() throws Exception {
+        Map<String, Object> values = redisUtil.hmget(MqConstant.DISTRIBUTED_MSG_PREPARE);
+        List<PrepareMessage> prepareMessages = new ArrayList<>();
+        values.forEach((key, value) -> {
+            if (msgTimeOut(key)) {
+                prepareMessages.add((PrepareMessage) value);
             }
-        }
-        return keys;
+        });
+        return prepareMessages;
     }
 
     @Override
-    public List getReady() throws Exception {
+    public List<EventMessage> getReady() throws Exception {
         List<Object> messages = redisUtil.hvalues(MqConstant.DISTRIBUTED_MSG_READY);
-        List<EventMessage> messageAlert = new ArrayList();
+        List<EventMessage> messageAlert = new ArrayList<>();
         for (Object o : messages) {
             EventMessage m = (EventMessage) o;
             if (msgTimeOut(m.getMessageId())) {

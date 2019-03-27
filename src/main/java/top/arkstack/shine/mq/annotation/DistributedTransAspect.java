@@ -15,11 +15,7 @@ import top.arkstack.shine.mq.bean.SendTypeEnum;
 import top.arkstack.shine.mq.bean.TransferBean;
 import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.coordinator.Coordinator;
-
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Enumeration;
+import top.arkstack.shine.mq.util.HttpUtil;
 
 /**
  * 分布式事务 {@link top.arkstack.shine.mq.annotation.DistributedTrans} 切面
@@ -53,7 +49,7 @@ public class DistributedTransAspect {
         String routeKey = trans.routeKey();
         String coordinatorName = trans.coordinator();
         // 防止多节点下同一事务 同一时间点下，msgId重复 增加时间戳和本机本地ip
-        String msgId = trans.bizId() + MqConstant.SPLIT + System.currentTimeMillis() + MqConstant.SPLIT + getIpAddress();
+        String msgId = trans.bizId() + MqConstant.SPLIT + HttpUtil.getIpAddress() + MqConstant.SPLIT + System.currentTimeMillis();
 
         Coordinator coordinator;
         try {
@@ -96,27 +92,4 @@ public class DistributedTransAspect {
 
     }
 
-    private static String getIpAddress() {
-        try {
-            Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces();
-            InetAddress ip;
-            while (allNetInterfaces.hasMoreElements()) {
-                NetworkInterface netInterface = allNetInterfaces.nextElement();
-                if (netInterface.isLoopback() || netInterface.isVirtual() || !netInterface.isUp()) {
-                    continue;
-                } else {
-                    Enumeration<InetAddress> addresses = netInterface.getInetAddresses();
-                    while (addresses.hasMoreElements()) {
-                        ip = addresses.nextElement();
-                        if (ip instanceof Inet4Address) {
-                            return ip.getHostAddress();
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "";
-    }
 }
