@@ -32,8 +32,8 @@ public class RedisCoordinator implements Coordinator {
 
     @Override
     public void setPrepare(PrepareMessage prepare) {
-        redisUtil.hset(MqConstant.DISTRIBUTED_MSG_PREPARE, prepare.getCheckBackId() + MqConstant.SPLIT +
-                System.currentTimeMillis(), prepare);
+        prepare.setTime(System.currentTimeMillis());
+        redisUtil.hset(MqConstant.DISTRIBUTED_MSG_PREPARE, prepare.getCheckBackId(), prepare);
     }
 
     @Override
@@ -62,7 +62,12 @@ public class RedisCoordinator implements Coordinator {
     }
 
     @Override
-    public void delStatus(String msgId) {
+    public void delPrepare(String checkBackId) {
+        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_PREPARE, checkBackId);
+    }
+
+    @Override
+    public void delReady(String msgId) {
         redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_READY, msgId);
     }
 
@@ -76,8 +81,9 @@ public class RedisCoordinator implements Coordinator {
         Map<String, Object> values = redisUtil.hmget(MqConstant.DISTRIBUTED_MSG_PREPARE);
         List<PrepareMessage> prepareMessages = new ArrayList<>();
         values.forEach((key, value) -> {
-            if (msgTimeOut(key)) {
-                prepareMessages.add((PrepareMessage) value);
+            PrepareMessage prepareMessage = (PrepareMessage) value;
+            if (compare(prepareMessage.getTime())) {
+                prepareMessages.add(prepareMessage);
             }
         });
         return prepareMessages;
@@ -138,7 +144,11 @@ public class RedisCoordinator implements Coordinator {
     private boolean msgTimeOut(String messageId) {
         String[] split = messageId.split(MqConstant.SPLIT);
         String time = split[split.length - 1];
-        long timeGap = System.currentTimeMillis() - Long.parseLong(time);
+        return compare(Long.parseLong(time));
+    }
+
+    private boolean compare(long time) {
+        long timeGap = System.currentTimeMillis() - time;
         return timeGap > MqConstant.TIME_OUT;
     }
 

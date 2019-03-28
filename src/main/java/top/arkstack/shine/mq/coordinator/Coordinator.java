@@ -40,11 +40,18 @@ public interface Coordinator {
     void setReady(String msgId, String checkBackId, EventMessage message);
 
     /**
+     * 删除状态（prepare状态）
+     *
+     * @param checkBackId 回查id
+     */
+    void delPrepare(String checkBackId);
+
+    /**
      * 删除状态（ready状态）
      *
      * @param msgId 消息id
      */
-    void delStatus(String msgId);
+    void delReady(String msgId);
 
     /**
      * 获取消息

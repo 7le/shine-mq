@@ -25,7 +25,7 @@ public class EventMessage implements Serializable {
 
     private String sendTypeEnum;
 
-    private Object msg;
+    private Object data;
 
     private String coordinator;
 

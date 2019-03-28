@@ -46,4 +46,9 @@ public class PrepareMessage implements Serializable {
      * 要发送的消息内容，在setPrepare是不需要的
      */
     private Object data;
+
+    /**
+     * 时间戳
+     */
+    private long time;
 }

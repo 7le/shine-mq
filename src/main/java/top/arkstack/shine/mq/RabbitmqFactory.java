@@ -132,7 +132,7 @@ public class RabbitmqFactory implements Factory {
                 //消息能投入正确的消息队列，并持久化，返回的ack为true
                 if (ack) {
                     log.info("The message has been successfully delivered to the queue, correlationData:{}", correlationData);
-                    coordinator.delStatus(msgId);
+                    coordinator.delReady(msgId);
                 } else {
                     //失败了判断重试次数，重试次数大于0则继续发送
                     if (ext.getMaxRetries() > 0) {
