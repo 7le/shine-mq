@@ -8,6 +8,8 @@ package top.arkstack.shine.mq;
  */
 public class ShineMqException extends RuntimeException {
 
+    private static final long serialVersionUID = 8936118899975856767L;
+
     public ShineMqException(String message) {
         super(message);
     }

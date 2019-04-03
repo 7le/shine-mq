@@ -18,7 +18,7 @@
 <dependency>
     <groupId>top.arkstack</groupId>
     <artifactId>shine-mq</artifactId>
-    <version>2.0.4-SNAPSHOT</version>
+    <version>2.0.4</version>
 </dependency>
 ```
  
@@ -65,6 +65,11 @@ Demo戳 [shine-mq-demo](https://github.com/7le/shine-mq-demo)
      * 或者不想用redis，可以设置为false，就不会有redis的依赖
      */
     private boolean redisPersistence = true;
+    
+     /**
+      * Prepare和Ready状态消息超时时间 默认为3分钟
+      */
+     private long timeOut = 60 * 3000;
 
 ```
 

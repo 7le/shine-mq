@@ -17,7 +17,6 @@ import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.coordinator.Coordinator;
 import top.arkstack.shine.mq.processor.Processor;
 
-import java.io.IOException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;

@@ -20,9 +20,6 @@ public class MqConstant {
 
     public static final String TIME = "yyyy-MM-dd HH:mm:ss";
 
-    //TODO 待优化成可配置
-    public static final long TIME_OUT = 60 * 3000;
-
     public static final String DATA_DEFAULT = "";
 
     public static final String RECEIVE_RETRIES = "receive_retries";

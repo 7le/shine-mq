@@ -149,7 +149,7 @@ public class RedisCoordinator implements Coordinator {
 
     private boolean compare(long time) {
         long timeGap = System.currentTimeMillis() - time;
-        return timeGap > MqConstant.TIME_OUT;
+        return timeGap > rabbitmqFactory.getConfig().getDistributed().getTimeOut();
     }
 
     private static String captureName(String str) {
