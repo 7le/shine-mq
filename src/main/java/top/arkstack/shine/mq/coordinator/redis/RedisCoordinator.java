@@ -103,6 +103,22 @@ public class RedisCoordinator implements Coordinator {
     }
 
     @Override
+    public void setReturnCallback(String msgId) {
+        redisUtil.set(MqConstant.RETURN_CALLBACK + msgId, true,
+                rabbitmqFactory.getConfig().getDistributed().getReturnCallbackTTL());
+    }
+
+    @Override
+    public boolean getReturnCallback(String msgId) {
+        return redisUtil.get(MqConstant.RETURN_CALLBACK + msgId) != null && (boolean) redisUtil.get(MqConstant.RETURN_CALLBACK + msgId);
+    }
+
+    @Override
+    public void delReturnCallback(String msgId) {
+        redisUtil.del(MqConstant.RETURN_CALLBACK + msgId);
+    }
+
+    @Override
     public void compensateReady(EventMessage message) throws Exception {
         rabbitmqFactory.setCorrelationData(message.getMessageId(), captureName(this.getClass().getSimpleName()),
                 message, null);
@@ -149,7 +165,7 @@ public class RedisCoordinator implements Coordinator {
 
     private boolean compare(long time) {
         long timeGap = System.currentTimeMillis() - time;
-        return timeGap > rabbitmqFactory.getConfig().getDistributed().getTimeOut();
+        return timeGap > rabbitmqFactory.getConfig().getDistributed().getTimeOut() * 1000;
     }
 
     private static String captureName(String str) {

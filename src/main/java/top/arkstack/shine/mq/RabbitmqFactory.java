@@ -129,8 +129,8 @@ public class RabbitmqFactory implements Factory {
                 CorrelationDataExt ext = (CorrelationDataExt) correlationData;
                 Coordinator coordinator = (Coordinator) applicationContext.getBean(ext.getCoordinator());
                 coordinator.confirmCallback(correlationData, ack);
-                //消息能投入正确的消息队列，并持久化，返回的ack为true
-                if (ack) {
+                // 如果发送到交换器成功，但是没有匹配的队列（比如说取消了绑定），ack返回值为还是true（这里是一个坑，需要注意）
+                if (ack && !coordinator.getReturnCallback(msgId)) {
                     log.info("The message has been successfully delivered to the queue, correlationData:{}", correlationData);
                     coordinator.delReady(msgId);
                 } else {
@@ -139,8 +139,7 @@ public class RabbitmqFactory implements Factory {
                         try {
                             rabbitmqFactory.setCorrelationData(msgId, ext.getCoordinator(), ext.getMessage(),
                                     ext.getMaxRetries() - 1);
-                            rabbitmqFactory.getTemplate().send(ext.getMessage().getExchangeName(), ext.getMessage(),
-                                    ext.getMessage().getRoutingKey());
+                            rabbitmqFactory.getTemplate().send(ext.getMessage(), 0, 0, SendTypeEnum.DISTRIBUTED);
                         } catch (Exception e) {
                             log.error("Message retry failed to send, message:{} exception: ", ext.getMessage(), e);
                         }
@@ -148,13 +147,17 @@ public class RabbitmqFactory implements Factory {
                         log.error("Message delivery failed, msgId: {}, cause: {}", msgId, cause);
                     }
                 }
+                coordinator.delReturnCallback(msgId);
             }
         });
         //使用return-callback时必须设置mandatory为true
         rabbitTemplate.setMandatory(true);
-        //消息发送到RabbitMQ交换器，但无相应Exchange时的回调
+        //消息发送到RabbitMQ交换器，但无相应queue时的回调
         rabbitTemplate.setReturnCallback((message, replyCode, replyText, exchange, routingKey) -> {
             String messageId = message.getMessageProperties().getMessageId();
+            String coordinatorName = messageId.split(MqConstant.SPLIT)[0];
+            Coordinator coordinator = (Coordinator) applicationContext.getBean(coordinatorName);
+            coordinator.setReturnCallback(messageId);
             log.error("ReturnCallback exception, no matching queue found. message id: {}, replyCode: {}, replyText: {},"
                     + "exchange: {}, routingKey: {}", messageId, replyCode, replyText, exchange, routingKey);
         });

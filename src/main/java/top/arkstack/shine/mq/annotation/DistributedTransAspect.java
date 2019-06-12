@@ -48,9 +48,6 @@ public class DistributedTransAspect {
         String exchange = trans.exchange();
         String routeKey = trans.routeKey();
         String coordinatorName = trans.coordinator();
-        // 防止多节点下同一事务 同一时间点下，msgId重复 增加时间戳和本机本地ip
-        String msgId = trans.bizId() + MqConstant.SPLIT + HttpUtil.getIpAddress() + MqConstant.SPLIT + System.currentTimeMillis();
-
         Coordinator coordinator;
         try {
             coordinator = (Coordinator) context.getBean(coordinatorName);
@@ -58,6 +55,9 @@ public class DistributedTransAspect {
             log.error("No coordinator or not joined the spring container : ", e);
             throw e;
         }
+        // 防止多节点下同一事务 同一时间点下，msgId重复 增加时间戳和本机本地ip
+        String msgId = coordinatorName + MqConstant.SPLIT + trans.bizId() + MqConstant.SPLIT + HttpUtil.getIpAddress()
+                + MqConstant.SPLIT + System.currentTimeMillis();
         Object bean;
         try {
             bean = pjp.proceed();
@@ -66,7 +66,7 @@ public class DistributedTransAspect {
             throw e;
         }
         if (!(bean instanceof TransferBean)) {
-            throw new ShineMqException("Return value please use TransferBean");
+            throw new ShineMqException("Return value please use TransferBean.");
         }
         TransferBean transferBean = (TransferBean) bean;
         if (transferBean.getCheckBackId() == null) {

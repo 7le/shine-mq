@@ -129,7 +129,7 @@ public class RabbitmqTemplate implements Template {
         if (priority > 0) {
             messageProperties.setPriority(priority);
         }
-        messageProperties.setMessageId(UUID.randomUUID().toString());
+        messageProperties.setMessageId(eventMessage.getMessageId());
         // 设置消息持久化
         messageProperties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
         Message message = messageConverter.toMessage(eventMessage, messageProperties);

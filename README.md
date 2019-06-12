@@ -9,7 +9,7 @@
 * **无缝集成 spring-boot-starter**
 * **封装mq的操作，方便使用**
 * **实现基于可靠消息服务的分布式事务（采用AOP思想与Spring无缝集成，仅通过注解就可使用**）
-* **可靠消息默认存储方式：redis (可自行执行实现)**
+* **可靠消息默认存储方式：redis (可自行实现)**
 * **目前消息中间件支持 : rabbitmq**
 
 ### 🐳 Maven
@@ -18,7 +18,7 @@
 <dependency>
     <groupId>top.arkstack</groupId>
     <artifactId>shine-mq</artifactId>
-    <version>2.0.4</version>
+    <version>2.0.5</version>
 </dependency>
 ```
  
@@ -66,10 +66,17 @@ Demo戳 [shine-mq-demo](https://github.com/7le/shine-mq-demo)
      */
     private boolean redisPersistence = true;
     
-     /**
-      * Prepare和Ready状态消息超时时间 默认为3分钟
-      */
-     private long timeOut = 60 * 3000;
+    /**
+     * Prepare和Ready状态消息超时时间 默认为3分钟
+     * 单位为秒
+     */
+    private long timeOut = 3 * 60;
+
+    /**
+     * returnCallback的状态过期时间 默认为1天
+     * 单位为秒
+     */
+    private long returnCallbackTTL = 24 * 60 * 60;
 
 ```
 

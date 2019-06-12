@@ -45,8 +45,15 @@ public class MqProperties {
 
         /**
          * Prepare和Ready状态消息超时时间 默认为3分钟
+         * 单位为秒
          */
-        private long timeOut = 60 * 3000;
+        private long timeOut = 3 * 60;
+
+        /**
+         * returnCallback的状态过期时间 默认为1天
+         * 单位为秒
+         */
+        private long returnCallbackTTL = 24 * 60 * 60;
     }
 
     @Data

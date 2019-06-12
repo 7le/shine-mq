@@ -79,6 +79,23 @@ public interface Coordinator {
     List<EventMessage> getReady() throws Exception;
 
     /**
+     * 设置消息发送到RabbitMQ交换器，但无相应queue时的状态
+     */
+    void setReturnCallback(String msgId);
+
+    /**
+     * 获取ReturnCallback的状态
+     */
+    boolean getReturnCallback(String msgId);
+
+    /**
+     * 删除ReturnCallback的状态
+     *
+     * @param msgId 消息id
+     */
+    void delReturnCallback(String msgId);
+
+    /**
      * 补偿ready状态消息
      *
      * @param message 消息
