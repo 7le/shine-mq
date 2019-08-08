@@ -29,6 +29,7 @@
         <spring.boot>2.0.3.RELEASE</spring.boot>
         <aspectj.version>1.8.13</aspectj.version>
         <jackson.version>2.9.9</jackson.version>
+        <jackson.databind.version>2.9.9.3</jackson.databind.version>
         <redis.version>2.0.4.RELEASE</redis.version>
         <jedis.version>2.9.0</jedis.version>
     </properties>
@@ -104,7 +105,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
+            <version>${jackson.databind.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
