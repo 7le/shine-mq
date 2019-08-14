@@ -33,7 +33,8 @@ public class RedisCoordinator implements Coordinator {
     @Override
     public void setPrepare(PrepareMessage prepare) {
         prepare.setTime(System.currentTimeMillis());
-        redisUtil.hset(MqConstant.DISTRIBUTED_MSG_PREPARE, prepare.getCheckBackId(), prepare);
+        redisUtil.hset(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.DISTRIBUTED_MSG_PREPARE, prepare.getCheckBackId(), prepare);
     }
 
     @Override
@@ -57,28 +58,34 @@ public class RedisCoordinator implements Coordinator {
 
     @Override
     public void setReady(String msgId, String checkBackId, EventMessage message) {
-        redisUtil.hset(MqConstant.DISTRIBUTED_MSG_READY, msgId, message);
-        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_PREPARE, checkBackId);
+        redisUtil.hset(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.DISTRIBUTED_MSG_READY, msgId, message);
+        redisUtil.hdel(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.DISTRIBUTED_MSG_PREPARE, checkBackId);
     }
 
     @Override
     public void delPrepare(String checkBackId) {
-        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_PREPARE, checkBackId);
+        redisUtil.hdel(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.DISTRIBUTED_MSG_PREPARE, checkBackId);
     }
 
     @Override
     public void delReady(String msgId) {
-        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_READY, msgId);
+        redisUtil.hdel(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.DISTRIBUTED_MSG_READY, msgId);
     }
 
     @Override
-    public EventMessage getMetaMsg(String msgId) {
-        return (EventMessage) redisUtil.hget(MqConstant.DISTRIBUTED_MSG_READY, msgId);
+    public EventMessage getEventMsg(String msgId) {
+        return (EventMessage) redisUtil.hget(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.DISTRIBUTED_MSG_READY, msgId);
     }
 
     @Override
     public List<PrepareMessage> getPrepare() throws Exception {
-        Map<String, Object> values = redisUtil.hmget(MqConstant.DISTRIBUTED_MSG_PREPARE);
+        Map<String, Object> values = redisUtil.hmget(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.DISTRIBUTED_MSG_PREPARE);
         List<PrepareMessage> prepareMessages = new ArrayList<>();
         values.forEach((key, value) -> {
             PrepareMessage prepareMessage = (PrepareMessage) value;
@@ -91,7 +98,8 @@ public class RedisCoordinator implements Coordinator {
 
     @Override
     public List<EventMessage> getReady() throws Exception {
-        List<Object> messages = redisUtil.hvalues(MqConstant.DISTRIBUTED_MSG_READY);
+        List<Object> messages = redisUtil.hvalues(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.DISTRIBUTED_MSG_READY);
         List<EventMessage> messageAlert = new ArrayList<>();
         for (Object o : messages) {
             EventMessage m = (EventMessage) o;
@@ -104,18 +112,23 @@ public class RedisCoordinator implements Coordinator {
 
     @Override
     public void setReturnCallback(String msgId) {
-        redisUtil.set(MqConstant.RETURN_CALLBACK + msgId, true,
+        redisUtil.set(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                        + MqConstant.RETURN_CALLBACK + msgId, true,
                 rabbitmqFactory.getConfig().getDistributed().getReturnCallbackTTL());
     }
 
     @Override
     public boolean getReturnCallback(String msgId) {
-        return redisUtil.get(MqConstant.RETURN_CALLBACK + msgId) != null && (boolean) redisUtil.get(MqConstant.RETURN_CALLBACK + msgId);
+        return redisUtil.get(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.RETURN_CALLBACK + msgId) != null &&
+                (boolean) redisUtil.get(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                        + MqConstant.RETURN_CALLBACK + msgId);
     }
 
     @Override
     public void delReturnCallback(String msgId) {
-        redisUtil.del(MqConstant.RETURN_CALLBACK + msgId);
+        redisUtil.del(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.RETURN_CALLBACK + msgId);
     }
 
     @Override
@@ -127,29 +140,34 @@ public class RedisCoordinator implements Coordinator {
 
     @Override
     public void delCheckBackIdWithPrepare(List<String> ids) {
-        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_PREPARE, ids.toArray());
+        redisUtil.hdel(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.DISTRIBUTED_MSG_PREPARE, ids.toArray());
     }
 
     @Override
     public void delCheckBackIdWithReady(List<EventMessage> ids) {
         List<String> messageIds = new ArrayList<>();
         ids.forEach(s -> messageIds.add(s.getMessageId()));
-        redisUtil.hdel(MqConstant.DISTRIBUTED_MSG_READY, ids.toArray());
+        redisUtil.hdel(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.DISTRIBUTED_MSG_READY, ids.toArray());
     }
 
     @Override
     public Double incrementResendKey(String key, String hashKey) {
-        return redisUtil.hincr(key, hashKey, 1);
+        return redisUtil.hincr(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + key, hashKey, 1);
     }
 
     @Override
     public Double getResendValue(String key, String hashKey) {
-        return (Double) redisUtil.hget(key, hashKey);
+        return (Double) redisUtil.hget(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + key, hashKey);
     }
 
     @Override
     public void delResendKey(String key, String hashKey) {
-        redisUtil.del(key, hashKey);
+        redisUtil.del(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + key, hashKey);
     }
 
     @Override

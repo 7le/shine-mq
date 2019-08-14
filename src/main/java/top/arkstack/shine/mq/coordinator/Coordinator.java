@@ -59,7 +59,7 @@ public interface Coordinator {
      * @param msgId 消息id
      * @return 消息
      */
-    EventMessage getMetaMsg(String msgId);
+    EventMessage getEventMsg(String msgId);
 
 
     /**
@@ -79,12 +79,13 @@ public interface Coordinator {
     List<EventMessage> getReady() throws Exception;
 
     /**
-     * 设置消息发送到RabbitMQ交换器，但无相应queue时的状态
+     * 设置消息发送到RabbitMQ交换器，但无对应queue时的状态
      */
     void setReturnCallback(String msgId);
 
     /**
      * 获取ReturnCallback的状态
+     * true 为无对应的queue
      */
     boolean getReturnCallback(String msgId);
 

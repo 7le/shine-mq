@@ -18,7 +18,7 @@
 <dependency>
     <groupId>top.arkstack</groupId>
     <artifactId>shine-mq</artifactId>
-    <version>2.0.5</version>
+    <version>2.1.0</version>
 </dependency>
 ```
  
@@ -41,7 +41,7 @@ Demo戳 [shine-mq-demo](https://github.com/7le/shine-mq-demo)
 
 分布式事务的配置，具体可配置的参数如下：
 
-```
+```java
     /**
      * 是否初始化 开启分布式事务 缺省为false
      */
@@ -67,6 +67,11 @@ Demo戳 [shine-mq-demo](https://github.com/7le/shine-mq-demo)
     private boolean redisPersistence = true;
     
     /**
+     * redis缓存前缀
+     */
+    private String redisPrefix = "";
+    
+    /**
      * Prepare和Ready状态消息超时时间 默认为3分钟
      * 单位为秒
      */
@@ -82,7 +87,7 @@ Demo戳 [shine-mq-demo](https://github.com/7le/shine-mq-demo)
 
 封装mq的操作，具体可配置的参数如下：
 
-```
+```java
     /**
      * 是否初始化消息监听者， 若服务只是Producer则关闭
      */

@@ -44,6 +44,11 @@ public class MqProperties {
         private boolean redisPersistence = true;
 
         /**
+         * redis缓存前缀
+         */
+        private String redisPrefix = "";
+
+        /**
          * Prepare和Ready状态消息超时时间 默认为3分钟
          * 单位为秒
          */

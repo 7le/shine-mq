@@ -152,7 +152,7 @@ public class RabbitmqFactory implements Factory {
         });
         //使用return-callback时必须设置mandatory为true
         rabbitTemplate.setMandatory(true);
-        //消息发送到RabbitMQ交换器，但无相应queue时的回调
+        //消息发送到RabbitMQ交换器，但无对应queue时的回调
         rabbitTemplate.setReturnCallback((message, replyCode, replyText, exchange, routingKey) -> {
             String messageId = message.getMessageProperties().getMessageId();
             String coordinatorName = messageId.split(MqConstant.SPLIT)[0];
