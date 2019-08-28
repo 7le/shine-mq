@@ -1,16 +1,22 @@
-# shine-mq
+# Shine-mq
+
+<div align="center">
+A reliable message distributed transaction middleware.
+</div>
 
 [![Gitter](https://badges.gitter.im/7le/shine-mq.svg)](https://gitter.im/7le/shine-mq)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/top.arkstack/shine-mq/badge.svg)](https://search.maven.org/artifact/top.arkstack/shine-mq/)
 [![Latest release](https://img.shields.io/github/release/7le/shine-mq.svg)](https://github.com/7le/shine-mq/releases/latest)
 
+English | [简体中文](./README-zh_CN.md)
+
 ### 🐣 Features
 
-* **无缝集成 spring-boot-starter**
-* **封装mq的操作，方便使用**
-* **实现基于可靠消息服务的分布式事务（采用AOP思想与Spring无缝集成，仅通过注解就可使用**）
-* **可靠消息默认存储方式：redis (可自行实现)**
-* **目前消息中间件支持 : rabbitmq**
+* **Seamless integration spring-boot-starter**
+* **Encapsulate mq operation, easy to use**
+* **Implement distributed transactions based on reliable message services (using AOP ideas and seamless integration with Spring, available through annotations)**
+* **Reliable message default storage: redis (self-implementation)**
+* **Current messaging middleware support : rabbitmq**
 
 ### 🐳 Maven
 
@@ -24,72 +30,70 @@
  
 ### 🎀 Distributed transaction
 
-![shine-mq](https://github.com/7le/7le.github.io/raw/master/image/dis/shine-mq.jpg)
+![shine-mq](https://github.com/7le/7le.github.io/raw/master/image/dis/shine-mq_EN.jpg)
 
-### 🎐 博客
+### 🎐 blog
 
-[分布式事务：基于可靠消息服务](https://7le.top/2018/12/04/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%EF%BC%9A%E5%9F%BA%E4%BA%8E%E5%8F%AF%E9%9D%A0%E6%B6%88%E6%81%AF%E6%9C%8D%E5%8A%A1/#more)
+[Distributed transactions: based on reliable messaging services](https://7le.top/2018/12/04/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%EF%BC%9A%E5%9F%BA%E4%BA%8E%E5%8F%AF%E9%9D%A0%E6%B6%88%E6%81%AF%E6%9C%8D%E5%8A%A1/#more)
 
-[分布式事务：消息可靠发送](https://7le.top/2019/02/21/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%EF%BC%9A%E6%B6%88%E6%81%AF%E5%8F%AF%E9%9D%A0%E5%8F%91%E9%80%81/)
+[Distributed transaction: reliable message delivery](https://7le.top/2019/02/21/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%EF%BC%9A%E6%B6%88%E6%81%AF%E5%8F%AF%E9%9D%A0%E5%8F%91%E9%80%81/)
 
 
 ### 🐹 Demo
 
-Demo戳 [shine-mq-demo](https://github.com/7le/shine-mq-demo)
+Demo click [shine-mq-demo](https://github.com/7le/shine-mq-demo)
 
 ### 🌈 Configuration
 
-分布式事务的配置，具体可配置的参数如下：
+Distributed transaction configuration, the specific configurable parameters are as follows：
 
 ```java
     /**
-     * 是否初始化 开启分布式事务 缺省为false
+     * Whether to initialize open distributed transaction defaults to false.
      */
     private boolean transaction = false;
 
     /**
-     * 提交ack 失败最大重试次数
+     * Submit ack failed maximum retries.
      */
      
     private Integer commitMaxRetries = 3;
 
     /**
-     * 接收消息 ack 失败最大尝试次数
+     * Receive message ack failed maximum attempts.
      */
     private Integer receiveMaxRetries = 3;
 
     /**
-     * 默认提供redis中间件来实现消息提交到mq之前的持久化
+     * Redis middleware is provided by default to implement persistence before messages are submitted to mq.
      *
-     * 也可以自己实现 {@link top.arkstack.shine.mq.coordinator.Coordinator}
-     * 或者不想用redis，可以设置为false，就不会有redis的依赖
+     * Can achieve it by yourself {@link top.arkstack.shine.mq.coordinator.Coordinator}
+     * Or don't want to use redis, you can set it to false, there will be no redis dependencies.
      */
     private boolean redisPersistence = true;
     
     /**
-     * redis缓存前缀
+     * Redis cache prefix
      */
     private String redisPrefix = "";
     
     /**
-     * Prepare和Ready状态消息超时时间 默认为3分钟
-     * 单位为秒
+     * Prepare and Ready status message timeouts default to 3 minutes (in seconds).
      */
     private long timeOut = 3 * 60;
 
     /**
-     * returnCallback的状态过期时间 默认为1天
-     * 单位为秒
+     * The status expiration time of returnCallback defaults to 1 day (in seconds).
      */
     private long returnCallbackTTL = 24 * 60 * 60;
 
 ```
 
-封装mq的操作，具体可配置的参数如下：
+The operation of encapsulating mq, the specific configurable parameters are as follows：
 
 ```java
     /**
-     * 是否初始化消息监听者， 若服务只是Producer则关闭
+     * Whether to initialize the message listener, if the service is only a Producer, then close
      */
     private boolean listenerEnable = false;
     
@@ -103,41 +107,43 @@ Demo戳 [shine-mq-demo](https://github.com/7le/shine-mq-demo)
     private int acknowledgeMode = 1;
 
     /**
-     * 每个消费者可能未完成的未确认消息的数量。
+     * The number of unconfirmed messages that each consumer may not complete.
      */
     private Integer prefetchCount = null;
 
     /**
-     * 为每个已配置队列创建的消费者数
+     * Number of consumers created for each configured queue.
      */
     private Integer consumersPerQueue = null;
 
     /**
-     * 是否持久化，指是否保存到erlang自带得数据库mnesia中，即重启服务是否消失
+     * Whether it is persistent, whether it is saved to the erlang database mnesia, 
+     * that is, whether the restart service disappears.
      */
     private boolean durable = true;
 
     /**
-     * 是否排外，指当前定义的队列是connection中的channel共享的，其他connection连接访问不到
+     * Whether it is exclusive, the currently defined queue is shared by the channel in the connection,
+     * and other connection connections are not accessible.
      */
     private boolean exclusive = false;
 
     /**
-     * 是否自动删除，指当connection.close时队列删除
+     * Whether to delete automatically, refers to the queue delete when connection.close.
      */
     private boolean autoDelete = false;
 
     /**
-     * 是否初始化消息监听者， 若服务只是Producer则关闭
+     * Whether to initialize the message listener, if the service is only a Producer, then close
      */
     private boolean listenerEnable = false;
 
     /**
-     * 通道缓存
+     * Channel cache
      */
     private Integer channelCacheSize = null;
 ```
 
 ### :octocat: End
 
-> 如果对你有帮助，那就帮忙点个星星把 ^.^
+> If it helps you, then help me with a star. ^.^
