@@ -28,8 +28,8 @@
         <rabbit-amqp-client.version>5.4.0</rabbit-amqp-client.version>
         <spring.boot>2.0.3.RELEASE</spring.boot>
         <aspectj.version>1.8.13</aspectj.version>
-        <jackson.version>2.9.9</jackson.version>
-        <jackson.databind.version>2.9.9.3</jackson.databind.version>
+        <jackson.version>2.9.10</jackson.version>
+        <jackson.databind.version>2.9.10</jackson.databind.version>
         <redis.version>2.0.4.RELEASE</redis.version>
         <jedis.version>2.9.0</jedis.version>
     </properties>
