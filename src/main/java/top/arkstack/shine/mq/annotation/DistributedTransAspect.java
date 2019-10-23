@@ -77,7 +77,6 @@ public class DistributedTransAspect {
                     coordinatorName, msgId);
             //将消息持久化
             coordinator.setReady(msgId, transferBean.getCheckBackId(), message);
-            rabbitmqFactory.setCorrelationData(msgId, coordinatorName, message, null);
             rabbitmqFactory.addDLX(exchange, exchange, routeKey, null, null);
             if (flag) {
                 rabbitmqFactory.add(MqConstant.DEAD_LETTER_QUEUE, MqConstant.DEAD_LETTER_EXCHANGE,
