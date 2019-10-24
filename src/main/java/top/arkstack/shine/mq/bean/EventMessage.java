@@ -1,8 +1,6 @@
 package top.arkstack.shine.mq.bean;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
@@ -13,8 +11,6 @@ import java.io.Serializable;
  * @version 1.0.0
  */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class EventMessage implements Serializable {
 
     private static final long serialVersionUID = -9203358002484642594L;
@@ -30,4 +26,25 @@ public class EventMessage implements Serializable {
     private String coordinator;
 
     private String messageId;
+
+    private String rollback;
+
+    public EventMessage(String exchangeName, String routingKey, String sendTypeEnum, Object data, String coordinator, String messageId, String rollback) {
+        this.exchangeName = exchangeName;
+        this.routingKey = routingKey;
+        this.sendTypeEnum = sendTypeEnum;
+        this.data = data;
+        this.coordinator = coordinator;
+        this.messageId = messageId;
+        this.rollback = rollback;
+    }
+
+    public EventMessage(String exchangeName, String routingKey, String sendTypeEnum, Object data, String coordinator, String messageId) {
+        this.exchangeName = exchangeName;
+        this.routingKey = routingKey;
+        this.sendTypeEnum = sendTypeEnum;
+        this.data = data;
+        this.coordinator = coordinator;
+        this.messageId = messageId;
+    }
 }

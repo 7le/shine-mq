@@ -16,7 +16,7 @@ import java.lang.annotation.*;
 public @interface DistributedTrans {
 
     /**
-     *  交换机
+     * 交换机
      */
     String exchange() default MqConstant.DISTRIBUTED_TRANSACTION_EXCHANGE;
 
@@ -35,4 +35,9 @@ public @interface DistributedTrans {
      * 持久化方式
      */
     String coordinator() default MqConstant.DISTRIBUTED_TRANSACTION_COORDINATOR;
+
+    /**
+     * 回滚地址
+     */
+    String rollback() default "";
 }

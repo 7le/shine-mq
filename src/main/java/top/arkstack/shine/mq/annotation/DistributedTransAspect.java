@@ -74,7 +74,7 @@ public class DistributedTransAspect {
         }
         try {
             EventMessage message = new EventMessage(exchange, routeKey, SendTypeEnum.DISTRIBUTED.toString(), transferBean,
-                    coordinatorName, msgId);
+                    coordinatorName, msgId, trans.rollback());
             //将消息持久化
             coordinator.setReady(msgId, transferBean.getCheckBackId(), message);
             rabbitmqFactory.addDLX(exchange, exchange, routeKey, null, null);
