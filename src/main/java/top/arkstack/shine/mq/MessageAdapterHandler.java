@@ -95,7 +95,7 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
                 wrap.process(em.getData(), message, channel);
             }
         } catch (Exception e) {
-            log.error("MessageAdapterHandler error, message: {} :", message.getBody(), e);
+            log.error("MessageAdapterHandler error, message: {} :", em, e);
             if (em != null && coordinator != null && SendTypeEnum.DISTRIBUTED.toString().equals(em.getSendTypeEnum())) {
                 Double resendCount = coordinator.incrementResendKey(MqConstant.RECEIVE_RETRIES, msgId);
                 if (resendCount >= rabbitmqFactory.getConfig().getDistributed().getReceiveMaxRetries()) {

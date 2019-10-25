@@ -65,28 +65,6 @@ public class RabbitmqTemplate implements Template {
         this.sendWithEM(message, expiration, priority, type);
     }
 
-    @Override
-    public void sendSimple(String exchangeName, Object msg, String routingKey) throws Exception {
-        this.sendSimple(exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, 0, 0);
-    }
-
-    @Override
-    public void sendSimple(String exchangeName, Object msg, String routingKey, int expiration) throws Exception {
-        this.sendSimple(exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, expiration, 0);
-    }
-
-    @Override
-    public void sendSimple(String exchangeName, Object msg, String routingKey, int expiration, int priority) throws Exception {
-        this.sendSimple(exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, expiration, priority);
-    }
-
-    @Override
-    public void sendSimple(String exchangeName, Object msg, String routingKey,
-                           int expiration, int priority, SendTypeEnum type) throws Exception {
-        this.sendSimple(exchangeName, msg, messageConverter, type, routingKey, expiration, priority);
-    }
-
-
     private Object send(String exchangeName, Object msg, MessageConverter messageConverter, SendTypeEnum type,
                         String routingKey, int expiration, int priority) throws Exception {
         check(exchangeName, routingKey);
@@ -146,39 +124,6 @@ public class RabbitmqTemplate implements Template {
             }
         } catch (AmqpException e) {
             logger.error("send event fail. Event Message : [{}]", eventMessage, e);
-            throw new Exception("send event fail", e);
-        }
-        return obj;
-    }
-
-    private Object sendSimple(String exchangeName, Object msg, MessageConverter messageConverter, SendTypeEnum type,
-                              String routingKey, int expiration, int priority) throws Exception {
-        check(exchangeName, routingKey);
-
-        Object obj = null;
-        String msgId = UUID.randomUUID().toString();
-        MessageProperties messageProperties = new MessageProperties();
-        //过期时间
-        if (expiration > 0) {
-            messageProperties.setExpiration(String.valueOf(expiration));
-        }
-        //消息优先级
-        if (priority > 0) {
-            messageProperties.setPriority(priority);
-        }
-        messageProperties.setMessageId(msgId);
-        // 设置消息持久化
-        messageProperties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
-        Message message = messageConverter.toMessage(msg, messageProperties);
-        rabbitmqFactory.setCorrelationData(msgId, null, null, null);
-        try {
-            if (SendTypeEnum.RPC.equals(type)) {
-                obj = eventAmqpTemplate.convertSendAndReceive(routingKey, message);
-            } else {
-                eventAmqpTemplate.send(exchangeName, routingKey, message);
-            }
-        } catch (AmqpException e) {
-            logger.error("send event fail. Event Message : [{}]", msg, e);
             throw new Exception("send event fail", e);
         }
         return obj;
