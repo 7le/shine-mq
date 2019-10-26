@@ -65,6 +65,12 @@ public class RedisCoordinator implements Coordinator {
     }
 
     @Override
+    public void setRollback(String msgId, EventMessage message) {
+        redisUtil.hset(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.DISTRIBUTED_MSG_ROLLBACK, msgId, message);
+    }
+
+    @Override
     public void delPrepare(String checkBackId) {
         redisUtil.hdel(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
                 + MqConstant.DISTRIBUTED_MSG_PREPARE, checkBackId);
@@ -74,6 +80,12 @@ public class RedisCoordinator implements Coordinator {
     public void delReady(String msgId) {
         redisUtil.hdel(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
                 + MqConstant.DISTRIBUTED_MSG_READY, msgId);
+    }
+
+    @Override
+    public void delRollback(String msgId) {
+        redisUtil.hdel(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.DISTRIBUTED_MSG_ROLLBACK, msgId);
     }
 
     @Override

@@ -104,9 +104,11 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
                         channel.basicNack(tag, false, false);
                     } else {
                         em.setSendTypeEnum(SendTypeEnum.ROLLBACK.toString());
+                        em.setRoutingKey(em.getRollback());
                         rabbitmqFactory.setCorrelationData(msgId, em.getCoordinator(), em,
                                 null);
-                        rabbitmqFactory.getTemplate().send(em.getExchangeName(), em.getData(), em.getRollback());
+                        coordinator.setRollback(msgId, em);
+                        rabbitmqFactory.getTemplate().send(em, 0, 0, SendTypeEnum.ROLLBACK);
                         channel.basicAck(tag, false);
                     }
                     coordinator.delResendKey(MqConstant.RECEIVE_RETRIES, msgId);

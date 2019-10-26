@@ -39,6 +39,14 @@ public interface Coordinator {
      */
     void setReady(String msgId, String checkBackId, EventMessage message);
 
+
+    /**
+     * 设置回滚消息的状态（rollback状态）
+     *
+     * @param msgId 消息id
+     */
+    void setRollback(String msgId, EventMessage message);
+
     /**
      * 删除状态（prepare状态）
      *
@@ -52,6 +60,13 @@ public interface Coordinator {
      * @param msgId 消息id
      */
     void delReady(String msgId);
+
+    /**
+     * 回滚消息的状态（rollback状态）
+     *
+     * @param msgId 消息id
+     */
+    void delRollback(String msgId);
 
     /**
      * 获取消息

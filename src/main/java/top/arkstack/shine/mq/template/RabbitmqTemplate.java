@@ -45,6 +45,11 @@ public class RabbitmqTemplate implements Template {
     }
 
     @Override
+    public void send(String exchangeName, Object msg, String routingKey, SendTypeEnum type) throws Exception {
+        this.send(exchangeName, msg, messageConverter, type, routingKey, 0, 0);
+    }
+
+    @Override
     public void send(String exchangeName, Object msg, String routingKey, int expiration) throws Exception {
         this.send(exchangeName, msg, messageConverter, SendTypeEnum.DIRECT, routingKey, expiration, 0);
     }

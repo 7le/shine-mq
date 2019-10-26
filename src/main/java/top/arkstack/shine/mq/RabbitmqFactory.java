@@ -157,7 +157,7 @@ public class RabbitmqFactory implements Factory {
                         // 如果发送到交换器成功，但是没有匹配的队列（比如说取消了绑定），ack返回值为还是true（这里是一个坑，需要注意）
                         if (ack && !coordinator.getReturnCallback(msgId)) {
                             log.info("The rollback message has been successfully delivered to the queue, correlationData:{}", correlationData);
-                            //TODO 待redis操作
+                            coordinator.delRollback(msgId);
                         }
                     }
                 }
@@ -308,9 +308,9 @@ public class RabbitmqFactory implements Factory {
     /**
      * 扩展消息的CorrelationData，方便在回调中应用
      */
-    public void setCorrelationData(String bizId, String coordinator, EventMessage msg, Integer retry) {
+    public void setCorrelationData(String id, String coordinator, EventMessage msg, Integer retry) {
         rabbitTemplate.setCorrelationDataPostProcessor(((message, correlationData) ->
-                new CorrelationDataExt(bizId, coordinator,
+                new CorrelationDataExt(id, coordinator,
                         retry == null ? config.getDistributed().getCommitMaxRetries() : retry, msg)));
     }
 }

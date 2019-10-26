@@ -22,6 +22,17 @@ public interface Template {
      */
     void send(String exchangeName, Object msg, String routingKey) throws Exception;
 
+    /**
+     * 带路由密钥的消息发送
+     *
+     * @param exchangeName 交换器
+     * @param msg          发送对象
+     * @param routingKey   路由密钥
+     * @param type         消息类型
+     * @throws Exception
+     */
+    void send(String exchangeName, Object msg, String routingKey, SendTypeEnum type) throws Exception;
+
 
     /**
      * 带路由密钥的消息发送，对消息进行过期设置
