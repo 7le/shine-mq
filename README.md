@@ -11,6 +11,7 @@ English | [简体中文](./README-zh_CN.md)
 * **Seamless integration spring-boot-starter**
 * **Encapsulate mq operation, easy to use**
 * **Implement distributed transactions based on reliable message services (using AOP ideas and seamless integration with Spring, available through annotations)**
+* **Distributed transaction support exception rollback**
 * **Reliable message default storage: redis (self-implementation)**
 * **Current messaging middleware support : rabbitmq**
 
@@ -20,7 +21,7 @@ English | [简体中文](./README-zh_CN.md)
 <dependency>
     <groupId>top.arkstack</groupId>
     <artifactId>shine-mq</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
  

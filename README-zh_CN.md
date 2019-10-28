@@ -11,6 +11,7 @@
 * **无缝集成 spring-boot-starter**
 * **封装mq的操作，方便使用**
 * **实现基于可靠消息服务的分布式事务（采用AOP思想与Spring无缝集成，通过注解就可使用)**
+* **分布式事务支持异常回滚**
 * **可靠消息默认存储方式：redis (可自行实现)**
 * **目前消息中间件支持 : rabbitmq**
 
@@ -20,7 +21,7 @@
 <dependency>
     <groupId>top.arkstack</groupId>
     <artifactId>shine-mq</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
  
