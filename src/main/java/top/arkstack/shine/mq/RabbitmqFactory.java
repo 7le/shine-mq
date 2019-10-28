@@ -77,7 +77,7 @@ public class RabbitmqFactory implements Factory {
         if (config.getDistributed().isTransaction()) {
             setRabbitTemplateForDis(config);
         }
-        template = new RabbitmqTemplate(rabbitTemplate, serializerMessageConverter);
+        template = new RabbitmqTemplate(this, rabbitTemplate, serializerMessageConverter);
     }
 
     public synchronized static RabbitmqFactory getInstance(MqProperties config, CachingConnectionFactory factory) {
@@ -127,27 +127,40 @@ public class RabbitmqFactory implements Factory {
                 log.info("ConfirmCallback ack: {} correlationData: {} cause: {}", ack, correlationData, cause);
                 String msgId = correlationData.getId();
                 CorrelationDataExt ext = (CorrelationDataExt) correlationData;
-                Coordinator coordinator = (Coordinator) applicationContext.getBean(ext.getCoordinator());
-                coordinator.confirmCallback(correlationData, ack);
-                // 如果发送到交换器成功，但是没有匹配的队列（比如说取消了绑定），ack返回值为还是true（这里是一个坑，需要注意）
-                if (ack && !coordinator.getReturnCallback(msgId)) {
-                    log.info("The message has been successfully delivered to the queue, correlationData:{}", correlationData);
-                    coordinator.delReady(msgId);
-                } else {
-                    //失败了判断重试次数，重试次数大于0则继续发送
-                    if (ext.getMaxRetries() > 0) {
-                        try {
-                            rabbitmqFactory.setCorrelationData(msgId, ext.getCoordinator(), ext.getMessage(),
-                                    ext.getMaxRetries() - 1);
-                            rabbitmqFactory.getTemplate().send(ext.getMessage(), 0, 0, SendTypeEnum.DISTRIBUTED);
-                        } catch (Exception e) {
-                            log.error("Message retry failed to send, message:{} exception: ", ext.getMessage(), e);
+                if (ext.getMessage() != null ) {
+                    if (SendTypeEnum.DISTRIBUTED.toString().equals(ext.getMessage().getSendTypeEnum())) {
+                        Coordinator coordinator = (Coordinator) applicationContext.getBean(ext.getCoordinator());
+                        coordinator.confirmCallback(correlationData, ack);
+                        // 如果发送到交换器成功，但是没有匹配的队列（比如说取消了绑定），ack返回值为还是true（这里是一个坑，需要注意）
+                        if (ack && !coordinator.getReturnCallback(msgId)) {
+                            log.info("The message has been successfully delivered to the queue, correlationData:{}", correlationData);
+                            coordinator.delReady(msgId);
+                        } else {
+                            //失败了判断重试次数，重试次数大于0则继续发送
+                            if (ext.getMaxRetries() > 0) {
+                                try {
+                                    rabbitmqFactory.setCorrelationData(msgId, ext.getCoordinator(), ext.getMessage(),
+                                            ext.getMaxRetries() - 1);
+                                    rabbitmqFactory.getTemplate().send(ext.getMessage(), 0, 0, SendTypeEnum.DISTRIBUTED);
+                                } catch (Exception e) {
+                                    log.error("Message retry failed to send, message:{} exception: ", ext.getMessage(), e);
+                                }
+                            } else {
+                                log.error("Message delivery failed, msgId: {}, cause: {}", msgId, cause);
+                            }
                         }
-                    } else {
-                        log.error("Message delivery failed, msgId: {}, cause: {}", msgId, cause);
+                        coordinator.delReturnCallback(msgId);
+                    }
+                    if(SendTypeEnum.ROLLBACK.toString().equals(ext.getMessage().getSendTypeEnum())){
+                        Coordinator coordinator = (Coordinator) applicationContext.getBean(ext.getCoordinator());
+                        coordinator.confirmCallback(correlationData, ack);
+                        // 如果发送到交换器成功，但是没有匹配的队列（比如说取消了绑定），ack返回值为还是true（这里是一个坑，需要注意）
+                        if (ack && !coordinator.getReturnCallback(msgId)) {
+                            log.info("The rollback message has been successfully delivered to the queue, correlationData:{}", correlationData);
+                            coordinator.delRollback(msgId);
+                        }
                     }
                 }
-                coordinator.delReturnCallback(msgId);
             }
         });
         //使用return-callback时必须设置mandatory为true
@@ -295,9 +308,9 @@ public class RabbitmqFactory implements Factory {
     /**
      * 扩展消息的CorrelationData，方便在回调中应用
      */
-    public void setCorrelationData(String bizId, String coordinator, EventMessage msg, Integer retry) {
+    public void setCorrelationData(String id, String coordinator, EventMessage msg, Integer retry) {
         rabbitTemplate.setCorrelationDataPostProcessor(((message, correlationData) ->
-                new CorrelationDataExt(bizId, coordinator,
+                new CorrelationDataExt(id, coordinator,
                         retry == null ? config.getDistributed().getCommitMaxRetries() : retry, msg)));
     }
 }

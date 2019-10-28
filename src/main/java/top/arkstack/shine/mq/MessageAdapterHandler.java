@@ -1,6 +1,7 @@
 package top.arkstack.shine.mq;
 
 import com.alibaba.fastjson.JSON;
+import com.google.common.base.Strings;
 import com.rabbitmq.client.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import top.arkstack.shine.mq.bean.SendTypeEnum;
 import top.arkstack.shine.mq.constant.MqConstant;
 import top.arkstack.shine.mq.coordinator.Coordinator;
 import top.arkstack.shine.mq.processor.Processor;
+import top.arkstack.shine.mq.template.RabbitmqTemplate;
 
 import java.util.Objects;
 import java.util.Set;
@@ -93,12 +95,22 @@ public class MessageAdapterHandler implements ChannelAwareMessageListener {
                 wrap.process(em.getData(), message, channel);
             }
         } catch (Exception e) {
-            log.error("MessageAdapterHandler error, message: {} :", message.getBody(), e);
+            log.error("MessageAdapterHandler error, message: {} :", em, e);
             if (em != null && coordinator != null && SendTypeEnum.DISTRIBUTED.toString().equals(em.getSendTypeEnum())) {
                 Double resendCount = coordinator.incrementResendKey(MqConstant.RECEIVE_RETRIES, msgId);
                 if (resendCount >= rabbitmqFactory.getConfig().getDistributed().getReceiveMaxRetries()) {
-                    // 放入死信队列
-                    channel.basicNack(tag, false, false);
+                    if (Strings.isNullOrEmpty(em.getRollback())) {
+                        // 放入死信队列
+                        channel.basicNack(tag, false, false);
+                    } else {
+                        em.setSendTypeEnum(SendTypeEnum.ROLLBACK.toString());
+                        em.setRoutingKey(em.getRollback());
+                        rabbitmqFactory.setCorrelationData(msgId, em.getCoordinator(), em,
+                                null);
+                        coordinator.setRollback(msgId, em);
+                        rabbitmqFactory.getTemplate().send(em, 0, 0, SendTypeEnum.ROLLBACK);
+                        channel.basicAck(tag, false);
+                    }
                     coordinator.delResendKey(MqConstant.RECEIVE_RETRIES, msgId);
                 } else {
                     // 重新放入队列 等待消费

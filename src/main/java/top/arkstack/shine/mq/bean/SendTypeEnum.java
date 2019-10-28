@@ -18,5 +18,5 @@ package top.arkstack.shine.mq.bean;
  * @version 1.0.0
  */
 public enum SendTypeEnum {
-    TOPIC, RPC, FANOUT, DIRECT, DISTRIBUTED, DLX
+    TOPIC, RPC, FANOUT, DIRECT, DISTRIBUTED, DLX, ROLLBACK
 }
