@@ -94,6 +94,14 @@ public interface Coordinator {
     List<EventMessage> getReady() throws Exception;
 
     /**
+     * 获取rollback状态消息
+     *
+     * @return
+     * @throws Exception
+     */
+    List<EventMessage> getRollback() throws Exception;
+
+    /**
      * 设置消息发送到RabbitMQ交换器，但无对应queue时的状态
      */
     void setReturnCallback(String msgId);

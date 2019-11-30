@@ -123,6 +123,20 @@ public class RedisCoordinator implements Coordinator {
     }
 
     @Override
+    public List<EventMessage> getRollback() throws Exception {
+        List<Object> messages = redisUtil.hvalues(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
+                + MqConstant.DISTRIBUTED_MSG_ROLLBACK);
+        List<EventMessage> messageAlert = new ArrayList<>();
+        for (Object o : messages) {
+            EventMessage m = (EventMessage) o;
+            if (msgTimeOut(m.getMessageId())) {
+                messageAlert.add(m);
+            }
+        }
+        return messageAlert;
+    }
+
+    @Override
     public void setReturnCallback(String msgId) {
         redisUtil.set(rabbitmqFactory.getConfig().getDistributed().getRedisPrefix()
                         + MqConstant.RETURN_CALLBACK + msgId, true,
