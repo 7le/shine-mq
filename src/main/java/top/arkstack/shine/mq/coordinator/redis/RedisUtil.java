@@ -1,6 +1,7 @@
 package top.arkstack.shine.mq.coordinator.redis;
 
 import com.google.common.base.Strings;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import redis.clients.jedis.JedisCommands;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -23,10 +25,9 @@ import java.util.concurrent.TimeUnit;
  * @author 7le
  * @since v2.0.0
  */
+@Slf4j
 @Component
 public class RedisUtil extends AbstractDistributedLock {
-
-    private final Logger logger = LoggerFactory.getLogger(RedisUtil.class);
 
     @Autowired
     private RedisTemplate redisTemplate;
@@ -47,7 +48,7 @@ public class RedisUtil extends AbstractDistributedLock {
             }
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis expire error :", e);
             return false;
         }
     }
@@ -72,7 +73,7 @@ public class RedisUtil extends AbstractDistributedLock {
         try {
             return redisTemplate.hasKey(key);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis exists error :", e);
             return false;
         }
     }
@@ -122,7 +123,7 @@ public class RedisUtil extends AbstractDistributedLock {
             operations.set(key, value);
             result = true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis set error :", e);
         }
         return result;
     }
@@ -144,8 +145,7 @@ public class RedisUtil extends AbstractDistributedLock {
             }
             result = true;
         } catch (Exception e) {
-
-            e.printStackTrace();
+            log.error("redis set error :", e);
         }
         return result;
     }
@@ -195,7 +195,7 @@ public class RedisUtil extends AbstractDistributedLock {
             redisTemplate.opsForHash().putAll(key, map);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis hmset error :", e);
             return false;
         }
     }
@@ -216,7 +216,7 @@ public class RedisUtil extends AbstractDistributedLock {
             }
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis hmset error :", e);
             return false;
         }
     }
@@ -234,7 +234,7 @@ public class RedisUtil extends AbstractDistributedLock {
             redisTemplate.opsForHash().put(key, item, value);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis hset error :", e);
             return false;
         }
     }
@@ -256,7 +256,7 @@ public class RedisUtil extends AbstractDistributedLock {
             }
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis hset error :", e);
             return false;
         }
     }
@@ -318,7 +318,7 @@ public class RedisUtil extends AbstractDistributedLock {
         try {
             return redisTemplate.opsForSet().members(key);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis sget error :", e);
             return null;
         }
     }
@@ -334,7 +334,7 @@ public class RedisUtil extends AbstractDistributedLock {
         try {
             return redisTemplate.opsForSet().isMember(key, value);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis sHasKey error :", e);
             return false;
         }
     }
@@ -350,7 +350,7 @@ public class RedisUtil extends AbstractDistributedLock {
         try {
             return redisTemplate.opsForSet().add(key, values);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis sset error :", e);
             return 0;
         }
     }
@@ -369,7 +369,7 @@ public class RedisUtil extends AbstractDistributedLock {
             if (time > 0) expire(key, time);
             return count;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis sset error :", e);
             return 0;
         }
     }
@@ -384,7 +384,7 @@ public class RedisUtil extends AbstractDistributedLock {
         try {
             return redisTemplate.opsForSet().size(key);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis sgetSetSize error :", e);
             return 0;
         }
     }
@@ -401,7 +401,7 @@ public class RedisUtil extends AbstractDistributedLock {
             Long count = redisTemplate.opsForSet().remove(key, values);
             return count;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis sdel error :", e);
             return 0;
         }
     }
@@ -419,7 +419,7 @@ public class RedisUtil extends AbstractDistributedLock {
         try {
             return redisTemplate.opsForList().range(key, start, end);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis lget error :", e);
             return null;
         }
     }
@@ -433,7 +433,7 @@ public class RedisUtil extends AbstractDistributedLock {
         try {
             return redisTemplate.opsForList().size(key);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis lgetListSize error :", e);
             return 0;
         }
     }
@@ -448,7 +448,7 @@ public class RedisUtil extends AbstractDistributedLock {
         try {
             return redisTemplate.opsForList().index(key, index);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis lgetIndex error :", e);
             return null;
         }
     }
@@ -464,7 +464,7 @@ public class RedisUtil extends AbstractDistributedLock {
             redisTemplate.opsForList().rightPush(key, value);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis lset error :", e);
             return false;
         }
     }
@@ -482,7 +482,7 @@ public class RedisUtil extends AbstractDistributedLock {
             if (time > 0) expire(key, time);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis lset error :", e);
             return false;
         }
     }
@@ -498,7 +498,7 @@ public class RedisUtil extends AbstractDistributedLock {
             redisTemplate.opsForList().rightPushAll(key, value);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis lset error :", e);
             return false;
         }
     }
@@ -516,7 +516,7 @@ public class RedisUtil extends AbstractDistributedLock {
             if (time > 0) expire(key, time);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis lset error :", e);
             return false;
         }
     }
@@ -533,7 +533,7 @@ public class RedisUtil extends AbstractDistributedLock {
             redisTemplate.opsForList().set(key, index, value);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis lUpdateIndex error :", e);
             return false;
         }
     }
@@ -547,10 +547,9 @@ public class RedisUtil extends AbstractDistributedLock {
      */
     public long ldel(String key,long count,Object value) {
         try {
-            Long remove = redisTemplate.opsForList().remove(key, count, value);
-            return remove;
+            return redisTemplate.opsForList().remove(key, count, value);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("redis ldel error :", e);
             return 0;
         }
     }
@@ -558,7 +557,7 @@ public class RedisUtil extends AbstractDistributedLock {
 
     //============================Lock=============================
 
-    private ThreadLocal<String> lockFlag = new ThreadLocal<>();
+    private ConcurrentHashMap lockMap = new ConcurrentHashMap();
 
     private static final String UNLOCK_LUA;
 
@@ -578,7 +577,7 @@ public class RedisUtil extends AbstractDistributedLock {
         // 如果获取锁失败，按照传入的重试次数进行重试
         while ((!result) && retryTimes-- > 0) {
             try {
-                logger.debug("lock failed, retrying..." + retryTimes);
+                log.debug("lock failed, retrying..." + retryTimes);
                 Thread.sleep(sleepMillis);
             } catch (InterruptedException e) {
                 throw new UnableToAcquireLockException("InterruptedException :", e);
@@ -597,12 +596,15 @@ public class RedisUtil extends AbstractDistributedLock {
             String result = (String) redisTemplate.execute((RedisCallback<String>) connection -> {
                 JedisCommands commands = (JedisCommands) connection.getNativeConnection();
                 String uuid = UUID.randomUUID().toString();
-                lockFlag.set(uuid);
-                return commands.set(key, uuid, "NX", "PX", expire);
+                String end = commands.set(key, uuid, "NX", "PX", expire);
+                if (!Strings.isNullOrEmpty(end)) {
+                    lockMap.put(key, uuid);
+                }
+                return end;
             });
             return !Strings.isNullOrEmpty(result);
         } catch (Exception e) {
-            logger.error("set redis occur an exception", e);
+            log.error("set redis occur an exception", e);
         }
         return false;
     }
@@ -613,7 +615,7 @@ public class RedisUtil extends AbstractDistributedLock {
             List<String> keys = new ArrayList<>();
             keys.add(key);
             List<String> args = new ArrayList<>();
-            args.add(lockFlag.get());
+            args.add(lockMap.get(key).toString());
             // 使用lua脚本删除redis中匹配value的key，可以避免由于方法执行时间过长而redis锁自动过期失效的时候误删其他线程的锁
             // spring自带的执行脚本方法中，集群模式直接抛出不支持执行脚本的异常，所以只能拿到原redis的connection来执行脚本
             Long result = (Long) redisTemplate.execute((RedisCallback<Long>) connection -> {
@@ -626,9 +628,10 @@ public class RedisUtil extends AbstractDistributedLock {
                 }
                 return 0L;
             });
+            lockMap.remove(key);
             return result != null && result > 0;
         } catch (Exception e) {
-            logger.error("release lock occur an exception", e);
+            log.error("release lock occur an exception", e);
         }
         return false;
     }
