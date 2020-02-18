@@ -616,6 +616,7 @@ public class RedisUtil extends AbstractDistributedLock {
             keys.add(key);
             List<String> args = new ArrayList<>();
             args.add(lockMap.get(key).toString());
+            lockMap.remove(key);
             // 使用lua脚本删除redis中匹配value的key，可以避免由于方法执行时间过长而redis锁自动过期失效的时候误删其他线程的锁
             // spring自带的执行脚本方法中，集群模式直接抛出不支持执行脚本的异常，所以只能拿到原redis的connection来执行脚本
             Long result = (Long) redisTemplate.execute((RedisCallback<Long>) connection -> {
@@ -628,7 +629,6 @@ public class RedisUtil extends AbstractDistributedLock {
                 }
                 return 0L;
             });
-            lockMap.remove(key);
             return result != null && result > 0;
         } catch (Exception e) {
             log.error("release lock occur an exception", e);
