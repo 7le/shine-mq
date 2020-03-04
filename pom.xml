@@ -29,7 +29,7 @@
         <spring.boot>2.0.3.RELEASE</spring.boot>
         <aspectj.version>1.8.13</aspectj.version>
         <jackson.version>2.9.10</jackson.version>
-        <jackson.databind.version>2.9.10.1</jackson.databind.version>
+        <jackson.databind.version>2.9.10.3</jackson.databind.version>
         <redis.version>2.0.4.RELEASE</redis.version>
         <jedis.version>2.9.0</jedis.version>
     </properties>
