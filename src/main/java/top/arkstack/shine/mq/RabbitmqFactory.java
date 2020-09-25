@@ -265,7 +265,6 @@ public class RabbitmqFactory implements Factory {
         if (bind.contains(bindRelation)) {
             return;
         }
-        boolean needBinding = false;
         Exchange exchange = exchanges.get(exchangeName);
         if (exchange == null) {
             if (SendTypeEnum.TOPIC.toString().equals(type)) {
@@ -275,7 +274,6 @@ public class RabbitmqFactory implements Factory {
             }
             exchanges.put(exchangeName, exchange);
             rabbitAdmin.declareExchange(exchange);
-            needBinding = true;
         }
         Queue queue = queues.get(queueName);
         if (queue == null) {
@@ -291,18 +289,15 @@ public class RabbitmqFactory implements Factory {
                 queues.put(queueName, queue);
             }
             rabbitAdmin.declareQueue(queue);
-            needBinding = true;
         }
-        if (needBinding) {
-            Binding binding;
-            if (SendTypeEnum.TOPIC.toString().equals(type)) {
-                binding = BindingBuilder.bind(queue).to((TopicExchange) exchange).with(routingKey);
-            } else {
-                binding = BindingBuilder.bind(queue).to((DirectExchange) exchange).with(routingKey);
-            }
-            rabbitAdmin.declareBinding(binding);
-            bind.add(bindRelation);
+        Binding binding;
+        if (SendTypeEnum.TOPIC.toString().equals(type)) {
+            binding = BindingBuilder.bind(queue).to((TopicExchange) exchange).with(routingKey);
+        } else {
+            binding = BindingBuilder.bind(queue).to((DirectExchange) exchange).with(routingKey);
         }
+        rabbitAdmin.declareBinding(binding);
+        bind.add(bindRelation);
     }
 
     /**
