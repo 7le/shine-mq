@@ -21,7 +21,7 @@ English | [简体中文](./README-zh_CN.md)
 <dependency>
     <groupId>top.arkstack</groupId>
     <artifactId>shine-mq</artifactId>
-    <version>2.2.0</version>
+    <version>2.2.1</version>
 </dependency>
 ```
  
