@@ -584,10 +584,14 @@ public class RedisUtil extends AbstractDistributedLock {
             }
             result = setRedis(key, expire);
         }
-        try {
-            return worker.invokeAfterLockAcquire();
-        } finally {
-            unLock(key);
+        if(result){
+            try {
+                return worker.invokeAfterLockAcquire();
+            } finally {
+                unLock(key);
+            }
+        }else {
+            return null;
         }
     }
 
