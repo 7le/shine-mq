@@ -21,7 +21,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <guava.version>21.0</guava.version>
-        <fastJson.version>1.2.40</fastJson.version>
+        <fastJson.version>1.2.83</fastJson.version>
         <junit.version>4.13.1</junit.version>
         <spring-amqp.version>2.0.6.RELEASE</spring-amqp.version>
         <lombok.version>1.16.22</lombok.version>
