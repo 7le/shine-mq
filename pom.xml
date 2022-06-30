@@ -23,7 +23,7 @@
         <guava.version>21.0</guava.version>
         <fastJson.version>1.2.40</fastJson.version>
         <junit.version>4.13.1</junit.version>
-        <spring-amqp.version>2.0.6.RELEASE</spring-amqp.version>
+        <spring-amqp.version>2.3.11</spring-amqp.version>
         <lombok.version>1.16.22</lombok.version>
         <rabbit-amqp-client.version>5.4.0</rabbit-amqp-client.version>
         <spring.boot>2.0.3.RELEASE</spring.boot>
